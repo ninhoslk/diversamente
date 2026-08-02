@@ -20,7 +20,7 @@ export default function QuemSomosPage() {
         {quemSomos.pilares.map((pilar, index) => {
           const Icone = PILAR_ICONES[index % PILAR_ICONES.length]
           return (
-            <Card key={pilar.titulo} className="glass rounded-3xl border shadow-sm">
+            <Card key={pilar.titulo} className="glass rounded-3xl border shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md hover:border-primary/30">
               <CardContent className="flex flex-col gap-4 p-7">
                 <span className="flex size-11 items-center justify-center rounded-2xl bg-primary/10">
                   <Icone className="size-5 text-primary" aria-hidden="true" />
@@ -33,23 +33,15 @@ export default function QuemSomosPage() {
         })}
       </div>
 
-      <section className="glass-strong mt-8 rounded-4xl border p-8 sm:p-12">
-        <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">{quemSomos.historiaTitulo}</h2>
-        <div className="mt-5 flex flex-col gap-4 text-sm leading-relaxed text-muted-foreground sm:text-base">
+      <section className="glass-strong mt-10 rounded-4xl border p-8 sm:p-12 shadow-sm transition-all duration-300 hover:border-primary/30">
+        <h2 className="text-2xl font-bold tracking-tight sm:text-3xl text-balance">{quemSomos.historiaTitulo}</h2>
+        <div className="mt-6 flex flex-col gap-4 text-sm leading-relaxed text-muted-foreground sm:text-base">
           {quemSomos.historiaParagrafos.map((paragrafo, idx) => (
-            <p key={idx}>{paragrafo}</p>
+            <p key={idx} className="text-pretty">{paragrafo}</p>
           ))}
         </div>
-
-        <dl className="mt-10 grid gap-6 sm:grid-cols-3">
-          {quemSomos.estatisticas.map((item) => (
-            <div key={item.rotulo} className="flex flex-col gap-1 rounded-2xl bg-card/70 p-5">
-              <dt className="text-sm text-muted-foreground">{item.rotulo}</dt>
-              <dd className="text-3xl font-bold holo-text">{item.valor}</dd>
-            </div>
-          ))}
-        </dl>
       </section>
     </PageShell>
   )
 }
+

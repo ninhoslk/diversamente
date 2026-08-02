@@ -38,14 +38,14 @@ export const TRILHAS: Trilha[] = [
   {
     slug: "fundamental-1",
     nome: "Ensino Fundamental I",
-    descricao: "Do 1º ao 5º ano, com trilhas para aluno, educador e família.",
+    descricao: "Do 1º ao 5º ano, com trilhas para estudante, educador e família.",
     gradient: "from-holo-blue via-holo-mint to-holo-yellow",
   },
 ]
 
 export const PUBLICOS: Record<PublicoSlug, string> = {
   crianca: "Criança",
-  aluno: "Aluno",
+  aluno: "Estudante",
   educador: "Material do Educador",
   familia: "Família",
 }

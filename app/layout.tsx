@@ -1,4 +1,4 @@
-import { Analytics } from '@vercel/analytics/next'
+
 import type { Metadata, Viewport } from 'next'
 import { Inter, Playfair_Display } from 'next/font/google'
 import { Toaster } from '@/components/ui/sonner'
@@ -21,8 +21,8 @@ const script = Playfair_Display({
 export const metadata: Metadata = {
   title: 'Diversamente — Plataforma Educacional',
   description:
-    'Trilhas de Educação Infantil e Ensino Fundamental I com PDFs, vídeos e jogos para alunos, educadores e famílias.',
-  generator: 'v0.app',
+    'Trilhas de Educação Infantil e Ensino Fundamental I com PDFs, vídeos e jogos para estudantes, educadores e famílias.',
+
   icons: {
     icon: [
       {
@@ -59,7 +59,7 @@ export default function RootLayout({
       <body className="font-sans antialiased">
         <AppProvider>{children}</AppProvider>
         <Toaster position="top-center" />
-        {process.env.NODE_ENV === 'production' && <Analytics />}
+
       </body>
     </html>
   )

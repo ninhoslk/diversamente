@@ -1,6 +1,7 @@
+"use client"
+
 import Link from "next/link"
 import { Mail, MessageCircle } from "lucide-react"
-import { Button } from "@/components/ui/button"
 import { Logo } from "@/components/brand/logo"
 
 export function SiteFooter() {
@@ -10,7 +11,7 @@ export function SiteFooter() {
         <div className="max-w-sm">
           <Logo size="sm" />
           <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-            Material pedagógico organizado por trilhas, do berçário ao 5º ano, para alunos, educadores e famílias
+            Material pedagógico organizado por trilhas, do berçário ao 5º ano, para estudantes, educadores e famílias
             caminharem juntos.
           </p>
         </div>
@@ -36,21 +37,22 @@ export function SiteFooter() {
         <div className="flex flex-col gap-4">
           <h2 className="text-sm font-semibold">Fale com a gente</h2>
           <div className="flex flex-col gap-3">
-            <Button
-              render={<a href="mailto:contato@diversamente.com" />}
-              variant="outline"
-              className="h-10 justify-start rounded-full bg-card/80 px-4"
+            <a
+              href="mailto:contato@diversamente.com"
+              className="group/button inline-flex h-10 shrink-0 items-center justify-start gap-1.5 rounded-full border border-border bg-background px-4 text-sm font-medium whitespace-nowrap transition-all outline-none select-none hover:bg-muted hover:text-foreground bg-card/80"
             >
-              <Mail className="size-4" aria-hidden="true" />
+              <Mail className="size-4 pointer-events-none shrink-0" aria-hidden="true" />
               contato@diversamente.com
-            </Button>
-            <Button
-              render={<a href="https://wa.me/5511999999999" target="_blank" rel="noopener noreferrer" />}
-              className="h-10 justify-start rounded-full px-4"
+            </a>
+            <a
+              href="https://wa.me/5511999999999"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="group/button inline-flex h-10 shrink-0 items-center justify-start gap-1.5 rounded-full border border-transparent bg-primary text-primary-foreground px-4 text-sm font-medium whitespace-nowrap transition-all outline-none select-none hover:bg-primary/80"
             >
-              <MessageCircle className="size-4" aria-hidden="true" />
+              <MessageCircle className="size-4 pointer-events-none shrink-0" aria-hidden="true" />
               WhatsApp
-            </Button>
+            </a>
           </div>
         </div>
       </div>

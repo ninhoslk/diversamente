@@ -40,7 +40,7 @@ export function PdfViewer({ url, titulo }: { url: string; titulo: string }) {
         setTotalPaginas(doc.numPages)
         setPagina(1)
       } catch (e) {
-        console.log("[v0] erro ao carregar pdf:", e)
+        console.error("Erro ao carregar documento PDF:", e)
         if (!cancelado) setErro("Não foi possível abrir este documento.")
       } finally {
         if (!cancelado) setCarregando(false)

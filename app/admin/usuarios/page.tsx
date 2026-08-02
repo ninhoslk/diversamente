@@ -81,8 +81,8 @@ export default function AdminUsuariosPage() {
   const rotuloPapel: Record<Papel, string> = {
     admin: "Administrador",
     professor: "Professor / Educador",
-    aluno: "Aluno",
-    pai: "Pai / Família",
+    aluno: "Estudante",
+    pai: "Família",
     visitante: "Visitante",
   }
 
@@ -99,7 +99,7 @@ export default function AdminUsuariosPage() {
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div className="max-w-2xl">
           <h1 className="font-serif text-3xl font-semibold tracking-tight text-balance sm:text-4xl">
-            Gestão de Alunos, Pais e Professores
+            Gestão de Estudantes, Famílias e Professores
           </h1>
           <p className="mt-2 leading-relaxed text-muted-foreground text-pretty">
             Cadastre os acessos da escola e defina quais categorias cada usuário pode visualizar.
@@ -234,8 +234,8 @@ export default function AdminUsuariosPage() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent className="rounded-2xl">
-                    <SelectItem value="aluno">Aluno (Vê apenas a categoria designada)</SelectItem>
-                    <SelectItem value="pai">Pai / Família (Vê apenas a categoria designada)</SelectItem>
+                    <SelectItem value="aluno">Estudante (Vê apenas a categoria designada)</SelectItem>
+                    <SelectItem value="pai">Família (Vê apenas a categoria designada)</SelectItem>
                     <SelectItem value="professor">Professor / Educador (Vê todas as salas)</SelectItem>
                     <SelectItem value="admin">Administrador (Acesso completo ao painel)</SelectItem>
                   </SelectContent>

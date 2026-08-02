@@ -13,12 +13,12 @@ const FAQ = [
   {
     pergunta: "Como acesso os materiais da minha turma?",
     resposta:
-      "Após entrar, vá em Conteúdos, escolha a trilha (Educação Infantil ou Fundamental I), a categoria da faixa etária e depois a aba do seu público: Criança/Aluno, Educador ou Família.",
+      "Após entrar, vá em Conteúdos, escolha a trilha (Educação Infantil ou Fundamental I), a categoria da faixa etária e depois a aba do seu público: Criança/Estudante, Educador ou Família.",
   },
   {
     pergunta: "Os conteúdos são adaptados para cada público?",
     resposta:
-      "Sim. A plataforma divide os acessos de forma organizada para que cada perfil (aluno, educador ou família) visualize os recursos pertinentes.",
+      "Sim. A plataforma divide os acessos de forma organizada para que cada perfil (estudante, educador ou família) visualize os recursos pertinentes.",
   },
   {
     pergunta: "Os vídeos possuem curadoria e ambiente seguro?",

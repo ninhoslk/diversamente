@@ -4,13 +4,14 @@ import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { usePathname } from "next/navigation"
 import Link from "next/link"
-import { LayoutDashboard, LibraryBig, LogOut, User, Users, Palette, Shield } from "lucide-react"
+import { LayoutDashboard, LibraryBig, LogOut, User, Users, Palette } from "lucide-react"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
@@ -48,8 +49,8 @@ export function AppHeader() {
   const rotuloPapel: Record<string, string> = {
     admin: "Administrador",
     professor: "Professor / Educador",
-    aluno: "Aluno",
-    pai: "Pai / Família",
+    aluno: "Estudante",
+    pai: "Família",
     visitante: "Visitante",
   }
 
@@ -116,59 +117,51 @@ export function AppHeader() {
           </div>
 
           <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="h-auto gap-2 rounded-full px-2.5 py-1.5 hover:bg-card/80">
-                <Avatar className="size-8 border border-primary/20">
-                  <AvatarFallback className="bg-primary/15 text-xs font-semibold text-primary">{iniciais}</AvatarFallback>
-                </Avatar>
-                <span className="hidden text-sm font-medium sm:inline">{usuario?.nome}</span>
-              </Button>
+            <DropdownMenuTrigger className="h-auto gap-2 rounded-full px-2.5 py-1.5 hover:bg-card/80 inline-flex items-center outline-none">
+              <Avatar className="size-8 border border-primary/20">
+                <AvatarFallback className="bg-primary/15 text-xs font-semibold text-primary">{iniciais}</AvatarFallback>
+              </Avatar>
+              <span className="hidden text-sm font-medium sm:inline">{usuario?.nome}</span>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-64 rounded-2xl p-2">
-              <DropdownMenuLabel className="flex flex-col gap-1.5 p-2">
-                <span className="text-sm font-semibold">{usuario?.nome}</span>
-                <span className="text-xs font-normal text-muted-foreground">{usuario?.email}</span>
-                <div className="flex flex-wrap gap-1 mt-0.5">
-                  <Badge variant="secondary" className="w-fit rounded-full text-[10px] font-medium uppercase">
-                    {rotuloPapel[usuario?.papel ?? "visitante"]}
-                  </Badge>
-                  {usuario?.categoriaNome ? (
-                    <Badge variant="outline" className="w-fit rounded-full text-[10px] font-medium">
-                      {usuario.categoriaNome}
+              <DropdownMenuGroup>
+                <DropdownMenuLabel className="flex flex-col gap-1.5 p-2">
+                  <span className="text-sm font-semibold">{usuario?.nome}</span>
+                  <span className="text-xs font-normal text-muted-foreground">{usuario?.email}</span>
+                  <div className="flex flex-wrap gap-1 mt-0.5">
+                    <Badge variant="secondary" className="w-fit rounded-full text-[10px] font-medium uppercase">
+                      {rotuloPapel[usuario?.papel ?? "visitante"]}
                     </Badge>
-                  ) : null}
-                </div>
-              </DropdownMenuLabel>
+                    {usuario?.categoriaNome ? (
+                      <Badge variant="outline" className="w-fit rounded-full text-[10px] font-medium">
+                        {usuario.categoriaNome}
+                      </Badge>
+                    ) : null}
+                  </div>
+                </DropdownMenuLabel>
+              </DropdownMenuGroup>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={() => setModalPerfilAberto(true)} className="rounded-xl cursor-pointer">
                 <User className="size-4" aria-hidden="true" />
                 Meu Perfil
               </DropdownMenuItem>
-              <DropdownMenuItem asChild className="rounded-xl cursor-pointer">
-                <Link href="/conteudos">
-                  <LibraryBig className="size-4" aria-hidden="true" />
-                  Biblioteca de Conteúdos
-                </Link>
+              <DropdownMenuItem onClick={() => router.push("/conteudos")} className="rounded-xl cursor-pointer">
+                <LibraryBig className="size-4" aria-hidden="true" />
+                Biblioteca de Conteúdos
               </DropdownMenuItem>
               {usuario?.papel === "admin" ? (
                 <>
-                  <DropdownMenuItem asChild className="rounded-xl cursor-pointer">
-                    <Link href="/admin">
-                      <LayoutDashboard className="size-4" aria-hidden="true" />
-                      Painel Admin
-                    </Link>
+                  <DropdownMenuItem onClick={() => router.push("/admin")} className="rounded-xl cursor-pointer">
+                    <LayoutDashboard className="size-4" aria-hidden="true" />
+                    Painel Admin
                   </DropdownMenuItem>
-                  <DropdownMenuItem asChild className="rounded-xl cursor-pointer">
-                    <Link href="/admin/aparencia">
-                      <Palette className="size-4 text-primary" aria-hidden="true" />
-                      Personalizar Layout
-                    </Link>
+                  <DropdownMenuItem onClick={() => router.push("/admin/aparencia")} className="rounded-xl cursor-pointer">
+                    <Palette className="size-4 text-primary" aria-hidden="true" />
+                    Personalizar Layout
                   </DropdownMenuItem>
-                  <DropdownMenuItem asChild className="rounded-xl cursor-pointer">
-                    <Link href="/admin/usuarios">
-                      <Users className="size-4 text-primary" aria-hidden="true" />
-                      Gestão de Alunos / Pais
-                    </Link>
+                  <DropdownMenuItem onClick={() => router.push("/admin/usuarios")} className="rounded-xl cursor-pointer">
+                    <Users className="size-4 text-primary" aria-hidden="true" />
+                    Gestão de Estudantes / Famílias
                   </DropdownMenuItem>
                 </>
               ) : null}
@@ -182,7 +175,7 @@ export function AppHeader() {
         </div>
       </header>
 
-      {/* Modal de Perfil sem erros */}
+      {/* Modal de Perfil */}
       <Dialog open={modalPerfilAberto} onOpenChange={setModalPerfilAberto}>
         <DialogContent className="glass-strong border sm:max-w-md rounded-3xl p-6">
           <DialogHeader>

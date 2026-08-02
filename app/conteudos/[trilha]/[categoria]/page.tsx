@@ -2,13 +2,13 @@
 
 import { use, useMemo, useState } from "react"
 import { notFound } from "next/navigation"
-import { FileText, Gamepad2, Inbox, PlayCircle } from "lucide-react"
+import { FileText, Gamepad2, Inbox, PlayCircle, Lock } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Breadcrumbs } from "@/components/app/breadcrumbs"
 import { MaterialDialog } from "@/components/app/material-dialog"
-import { getCategoria, getTrilha, PUBLICOS, TIPOS, type Material, type TipoMaterial } from "@/lib/catalog"
+import { getCategoria, getTrilha, PUBLICOS, TIPOS, type Material, type TipoMaterial, type PublicoSlug } from "@/lib/catalog"
 import { useApp } from "@/lib/app-provider"
 
 const ICONES: Record<TipoMaterial, typeof FileText> = {
@@ -23,17 +23,38 @@ export default function CategoriaPage({
   params: Promise<{ trilha: string; categoria: string }>
 }) {
   const { trilha: trilhaSlug, categoria: categoriaSlug } = use(params)
-  const { materiais } = useApp()
+  const { materiais, usuario } = useApp()
   const [selecionado, setSelecionado] = useState<Material | null>(null)
 
   const trilha = getTrilha(trilhaSlug)
   const categoria = getCategoria(trilhaSlug, categoriaSlug)
   if (!trilha || !categoria) notFound()
 
+  // Filtragem dos públicos permitidos com base no Papel do Usuário
+  // Regras pedidas:
+  // - Aluno só vê o material de aluno (e criança para ed. infantil)
+  // - Professor e Admin veem tudo (aluno/criança, educador e família)
+  // - Pais veem o material dos pais (família) e do aluno (aluno/criança)
+  const publicosPermitidos = useMemo<PublicoSlug[]>(() => {
+    const papel = usuario?.papel ?? "visitante"
+    if (papel === "admin" || papel === "professor") {
+      return categoria.publicos
+    }
+    if (papel === "aluno") {
+      return categoria.publicos.filter((p) => p === "aluno" || p === "crianca")
+    }
+    if (papel === "pai") {
+      return categoria.publicos.filter((p) => p === "familia" || p === "aluno" || p === "crianca")
+    }
+    return categoria.publicos
+  }, [usuario, categoria])
+
   const doGrupo = useMemo(
     () => materiais.filter((m) => m.trilha === trilhaSlug && m.categoria === categoriaSlug),
     [materiais, trilhaSlug, categoriaSlug],
   )
+
+  const publicoInicial = publicosPermitidos.length > 0 ? publicosPermitidos[0] : categoria.publicos[0]
 
   return (
     <div>
@@ -46,23 +67,43 @@ export default function CategoriaPage({
       />
 
       <header className="flex flex-col gap-3">
-        <h1 className="text-pretty text-3xl font-bold tracking-tight sm:text-4xl">{categoria.nome}</h1>
+        <div className="flex items-center gap-2">
+          <h1 className="text-pretty text-3xl font-bold tracking-tight sm:text-4xl">{categoria.nome}</h1>
+          <Badge variant="outline" className="rounded-full text-xs font-normal">
+            Visão: {usuario?.papel === "admin" ? "Administrador" : usuario?.papel === "professor" ? "Professor" : usuario?.papel === "pai" ? "Família" : "Estudante"}
+          </Badge>
+        </div>
         <p className="max-w-2xl text-pretty leading-relaxed text-muted-foreground">
-          Escolha o público e depois o formato do material que deseja acessar.
+          Escolha a aba de público liberada para o seu perfil e o formato do material que deseja acessar.
         </p>
       </header>
 
-      {/* Nível 3: sub-abas de público */}
-      <Tabs defaultValue={categoria.publicos[0]} className="mt-8">
+      {/* Nível 3: sub-abas de público liberadas para a função logada */}
+      <Tabs defaultValue={publicoInicial} className="mt-8">
         <TabsList className="glass h-auto flex-wrap justify-start gap-1 rounded-full border p-1.5">
-          {categoria.publicos.map((p) => (
-            <TabsTrigger key={p} value={p} className="rounded-full px-4 py-2 text-sm">
-              {PUBLICOS[p]}
-            </TabsTrigger>
-          ))}
+          {categoria.publicos.map((p) => {
+            const estaLiberado = publicosPermitidos.includes(p)
+            if (!estaLiberado) {
+              return (
+                <div
+                  key={p}
+                  className="flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-medium text-muted-foreground/50 cursor-not-allowed select-none bg-secondary/30"
+                  title="Conteúdo exclusivo para outros perfis"
+                >
+                  <Lock className="size-3.5" />
+                  <span>{PUBLICOS[p]}</span>
+                </div>
+              )
+            }
+            return (
+              <TabsTrigger key={p} value={p} className="rounded-full px-4 py-2 text-sm">
+                {PUBLICOS[p]}
+              </TabsTrigger>
+            )
+          })}
         </TabsList>
 
-        {categoria.publicos.map((publico) => (
+        {publicosPermitidos.map((publico) => (
           <TabsContent key={publico} value={publico} className="mt-6">
             {/* Filtro por tipo de material */}
             <Tabs defaultValue="pdf">

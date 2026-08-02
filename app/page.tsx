@@ -1,3 +1,5 @@
+"use client";
+
 import Link from "next/link"
 import { ArrowRight, BookOpen, Gamepad2, Heart, PlayCircle, Sparkles, Users } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -73,7 +75,7 @@ export default function HomePage() {
             {home.recursos.map((recurso, index) => {
               const Icone = ICONES_RECURSOS[index % ICONES_RECURSOS.length]
               return (
-                <Card key={recurso.titulo} className="glass rounded-3xl border shadow-sm transition-transform hover:-translate-y-1">
+                <Card key={recurso.titulo} className="glass rounded-3xl border shadow-sm transition-all duration-300 hover:-translate-y-1">
                   <CardContent className="flex flex-col gap-3 p-6">
                     <span className="flex size-11 items-center justify-center rounded-2xl bg-primary/10">
                       <Icone className="size-5 text-primary" aria-hidden="true" />
@@ -166,3 +168,5 @@ export default function HomePage() {
     </div>
   )
 }
+
+

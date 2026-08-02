@@ -3,6 +3,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react"
 import { MATERIAIS_INICIAIS, type Material } from "@/lib/catalog"
 import { CONFIG_PADRAO_SITE, type SiteConfig } from "@/lib/site-config"
+import { fetchSupabaseSiteConfig, saveSupabaseSiteConfig } from "@/lib/supabase"
 
 export type Papel = "admin" | "professor" | "aluno" | "pai" | "visitante"
 
@@ -20,8 +21,8 @@ export type ContaDemo = Usuario & { senha: string }
 export const CONTAS_INICIAIS: ContaDemo[] = [
   { id: "u1", nome: "Administração", email: "admin@diversamente.com", senha: "admin123", papel: "admin", categoriaId: "todas", categoriaNome: "Todas as salas / anos" },
   { id: "u2", nome: "Prof. Mariana Costa", email: "prof@diversamente.com", senha: "prof123", papel: "professor", categoriaId: "todas", categoriaNome: "Todas as salas / anos" },
-  { id: "u3", nome: "Lucas Silva (Aluno)", email: "aluno@diversamente.com", senha: "aluno123", papel: "aluno", categoriaId: "fundamental-1", categoriaNome: "Ensino Fundamental I" },
-  { id: "u4", nome: "Roberto Silva (Pai)", email: "pai@diversamente.com", senha: "pai123", papel: "pai", categoriaId: "fundamental-1", categoriaNome: "Ensino Fundamental I" },
+  { id: "u3", nome: "Lucas Silva (Estudante)", email: "aluno@diversamente.com", senha: "aluno123", papel: "aluno", categoriaId: "fundamental-1", categoriaNome: "Ensino Fundamental I" },
+  { id: "u4", nome: "Roberto Silva (Família)", email: "pai@diversamente.com", senha: "pai123", papel: "pai", categoriaId: "fundamental-1", categoriaNome: "Ensino Fundamental I" },
 ]
 
 type AppContextValue = {
@@ -60,13 +61,40 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
       const usuariosSalvos = localStorage.getItem(CHAVE_USUARIOS)
       if (usuariosSalvos) setUsuarios(JSON.parse(usuariosSalvos))
-
-      const configSalva = localStorage.getItem(CHAVE_SITE_CONFIG)
-      if (configSalva) setSiteConfig(JSON.parse(configSalva))
     } catch {
       // ignora erros de parsing em ambiente de dev
     }
-    setCarregando(false)
+
+    async function carregarConfiguracoes() {
+      // 1. Tenta buscar a configuração global direto do Supabase DB
+      const configSupabase = await fetchSupabaseSiteConfig()
+      if (configSupabase && configSupabase.home) {
+        setSiteConfig(configSupabase)
+        setCarregando(false)
+        return
+      }
+
+      // 2. Tenta buscar da API local caso Supabase DB ainda não tenha a tabela criada
+      try {
+        const res = await fetch("/api/site-config")
+        const data = await res.json()
+        if (data && typeof data === "object" && data.home) {
+          setSiteConfig(data)
+          setCarregando(false)
+          return
+        }
+      } catch {}
+
+      // 3. Fallback localStorage
+      try {
+        const configSalva = localStorage.getItem(CHAVE_SITE_CONFIG)
+        if (configSalva) setSiteConfig(JSON.parse(configSalva))
+      } catch {}
+
+      setCarregando(false)
+    }
+
+    carregarConfiguracoes()
   }, [])
 
   const persistirSessao = useCallback((u: Usuario | null) => {
@@ -153,8 +181,20 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const atualizarSiteConfig = useCallback((novaConfig: SiteConfig) => {
     setSiteConfig(novaConfig)
+    
+    // 1. Salva no Supabase DB (afeta imediatamente todos os navegadores, produção e localhost)
+    saveSupabaseSiteConfig(novaConfig).catch(() => {})
+
+    // 2. Salva na API local
+    fetch("/api/site-config", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(novaConfig),
+    }).catch(() => {})
+
+    // 3. Salva no localStorage
     try {
-      localStorage.setItem(CHAVE_SITE_CONFIG, JSON.stringify(novaConfig))
+      localStorage.setItem(CHAVE_SITE_CONFIG, JSON.stringify(novaConfig),)
     } catch {
       // ignora
     }

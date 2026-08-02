@@ -69,7 +69,7 @@ export const CONFIG_PADRAO_SITE: SiteConfig = {
     tituloPrincipal: "Todo o material da sua escola,",
     tituloDestaque: "organizado com excelência e praticidade",
     descricao:
-      "A Diversamente reúne PDFs, vídeos e jogos pedagógicos estruturados em trilhas claras para cada faixa etária — oferecendo caminhos exclusivos para o aluno, o educador e a família.",
+      "A Diversamente reúne PDFs, vídeos e jogos pedagógicos estruturados em trilhas claras para cada faixa etária — oferecendo caminhos exclusivos para o estudante, o educador e a família.",
     recursos: [
       {
         titulo: "Leitura Interativa e Segura",
@@ -140,15 +140,12 @@ export const CONFIG_PADRAO_SITE: SiteConfig = {
     ],
     historiaTitulo: "Nossa História",
     historiaParagrafos: [
-      "A Diversamente nasceu da necessidade de conectar educadores, alunos e famílias em uma só rede colaborativa de aprendizado.",
-      "Com a expansão da plataforma, reunimos dezenas de especialistas para transformar a busca por materiais pedagógicos em uma experiência ágil, bonita e intuitiva.",
-      "Hoje, apoiamos centenas de turmas de Educação Infantil e Fundamental I com trilhas completas adaptadas às diretrizes curriculares.",
+      "A Diversamente nasceu da união entre ciência, educação e um sonho em comum: construir uma aprendizagem em que cada criança seja vista, compreendida e respeitada em sua singularidade.",
+      "Mais do que desenvolver uma coleção, reunimos pesquisadores, educadores e especialistas para transformar anos de estudos em estratégias que fazem sentido na prática, aproximando a neurociência do cotidiano das escolas, das famílias e dos estudantes.",
+      "Acreditamos que a inclusão não começa quando adaptamos um material. Ela começa quando planejamos uma educação capaz de acolher diferentes formas de aprender desde o primeiro momento.",
+      "Essa é a essência da Diversamente: transformar conhecimento em oportunidades, afeto em conexão e aprendizagem em desenvolvimento.",
     ],
-    estatisticas: [
-      { valor: "+2.500", rotulo: "Materiais disponíveis" },
-      { valor: "+200", rotulo: "Escolas parceiras" },
-      { valor: "8", rotulo: "Trilhas por faixa etária" },
-    ],
+    estatisticas: [],
   },
   mentoria: {
     titulo: "Programas de Mentoria",

@@ -33,7 +33,7 @@ export default function AdminPage() {
         <div className="max-w-xl">
           <h1 className="font-serif text-3xl font-semibold tracking-tight text-balance sm:text-4xl">Painel Admin</h1>
           <p className="mt-2 leading-relaxed text-muted-foreground text-pretty">
-            Gerencie os materiais da biblioteca, edite o layout do site (Elementor) e cadastre alunos e professores.
+            Gerencie os materiais da biblioteca, edite o layout do site (Elementor) e cadastre estudantes, famílias e professores.
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-3">
@@ -46,7 +46,7 @@ export default function AdminPage() {
           <Button asChild variant="outline" className="rounded-full">
             <Link href="/admin/usuarios">
               <Users className="size-4 text-primary" aria-hidden="true" />
-              Alunos & Professores
+              Estudantes & Famílias
             </Link>
           </Button>
           <Button asChild className="rounded-full">

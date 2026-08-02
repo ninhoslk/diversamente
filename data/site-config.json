@@ -1,0 +1,135 @@
+{
+  "home": {
+    "badge": "Do berçário ao 5º ano, em um só lugar",
+    "tituloPrincipal": "Todo o material da sua escola,",
+    "tituloDestaque": "organizado com excelência e praticidade",
+    "descricao": "A Diversamente reúne PDFs, vídeos e jogos pedagógicos estruturados em trilhas claras para cada faixa etária — oferecendo caminhos exclusivos para o estudante, o educador e a família.",
+    "recursos": [
+      {
+        "titulo": "Leitura Interativa e Segura",
+        "texto": "Visualização otimizada diretamente na plataforma, garantindo rápida navegação e experiência sem distrações."
+      },
+      {
+        "titulo": "Vídeos Pedagógicos Selecionados",
+        "texto": "Conteúdos multimídia curados por especialistas e apresentados em um ambiente protegido e focado na aprendizagem."
+      },
+      {
+        "titulo": "Jogos Educativos Dinâmicos",
+        "texto": "Atividades interativas projetadas para estimular a autonomia, o raciocínio lógico e o aprendizado significativo."
+      }
+    ]
+  },
+  "autores": {
+    "titulo": "Nossos Autores",
+    "subtitulo": "Cada material da Diversamente nasce das mãos de quem vive e entende a educação. Conheça a equipe de especialistas que assina nossos conteúdos.",
+    "autores": [
+      {
+        "id": "a1",
+        "nome": "Merlyn Mercia Oliani",
+        "cargo": "Mestre, pesquisadora e coautora da Coleção Diversamente.",
+        "foto": "https://i.ibb.co/zHV43dvQ/mel2.png",
+        "especialidades": [
+          "Educação Infantil",
+          "Alfabetização"
+        ],
+        "bio": "Merlyn Mércia Oliani, ou simplesmente Mel, é uma das idealizadoras da Coleção Diversamente. Sua trajetória une pesquisa, inovação e gestão para transformar conhecimento científico em soluções que fazem sentido dentro da escola. Com formação pela UNESP, atuação como pesquisadora, palestrante e gestora da Ecosbio, Mel acredita que a educação inclusiva começa quando enxergamos o potencial de cada estudante."
+      },
+      {
+        "id": "a2",
+        "nome": "Liana Pinto Tubelo",
+        "cargo": "Especialista em Neuropsicologia, Psicanalista, Professora e Pesquisadora.",
+        "foto": "https://i.ibb.co/991XsPps/image.png",
+        "especialidades": [
+          "Fundamental I",
+          "Leitura e Escrita"
+        ],
+        "bio": "Educadora, pesquisadora e coautora da Coleção Diversamente. Sua trajetória é marcada pela união entre Neuropsicologia, Educação e o brincar como ferramenta de desenvolvimento. Afinal, quando a aprendizagem faz sentido para a criança, ela acontece de forma mais significativa. Mais do que ensinar conteúdos, Liana inspira educadores a despertarem curiosidade, autonomia e confiança em cada estudante."
+      },
+      {
+        "id": "a3",
+        "nome": "Dra. Mari e Dr. Luiz Miguel",
+        "cargo": "Dra. Mari - Autora de artigos internacionais e Pós-Doutora Dr. Luiz Miguel - Pesquisador e Autor de 6 patentes.",
+        "foto": "https://i.ibb.co/7tJsmKXm/image.png",
+        "especialidades": [
+          "Jogos Pedagógicos",
+          "Tecnologia na Educação"
+        ],
+        "bio": "A Dra. Cássia Mariana Bronzon da Costa e o Dr. Luiz Miguel Pereira unem uma sólida trajetória acadêmica, pesquisa científica e inovação para transformar evidências em práticas educacionais que fazem diferença no cotidiano escolar. Mais do que títulos, publicações e reconhecimento, ambos compartilham um propósito: tornar a aprendizagem mais acessível, inclusiva e significativa para todos."
+      }
+    ],
+    "secaoFinalTitulo": "Quer publicar seu material conosco?",
+    "secaoFinalTexto": "Se você é educador ou especialista e deseja compartilhar seus materiais na plataforma Diversamente, entre em contato através da nossa página de Ajuda."
+  },
+  "quemSomos": {
+    "titulo": "Quem Somos",
+    "subtitulo": "Somos um coletivo de educadores apaixonados por transformar a rotina escolar através da organização, inovação e acolhimento.",
+    "pilares": [
+      {
+        "titulo": "Nossa Missão",
+        "texto": "Proporcionar a escolas, professores e famílias uma plataforma integrada com conteúdos pedagógicos de alta qualidade organizados por faixas etárias."
+      },
+      {
+        "titulo": "Nossa Visão",
+        "texto": "Ser a principal referência em curadoria e organização de recursos educacionais para a Educação Infantil e o Ensino Fundamental I no Brasil."
+      },
+      {
+        "titulo": "Nossos Valores",
+        "texto": "Inclusão, respeito à diversidade, incentivo ao protagonismo infantil e fortalecimento da parceria entre escola e família."
+      },
+      {
+        "titulo": "Como Trabalhamos",
+        "texto": "Cada conteúdo passa por minuciosa validação pedagógica para garantir máxima relevância em sala de aula e no acompanhamento familiar."
+      }
+    ],
+    "historiaTitulo": "Nossa História",
+    "historiaParagrafos": [
+      "A Diversamente nasceu da união entre ciência, educação e um sonho em comum: construir uma aprendizagem em que cada criança seja vista, compreendida e respeitada em sua singularidade.",
+      "Mais do que desenvolver uma coleção, reunimos pesquisadores, educadores e especialistas para transformar anos de estudos em estratégias que fazem sentido na prática, aproximando a neurociência do cotidiano das escolas, das famílias e dos estudantes.",
+      "Acreditamos que a inclusão não começa quando adaptamos um material. Ela começa quando planejamos uma educação capaz de acolher diferentes formas de aprender desde o primeiro momento.",
+      "Essa é a essência da Diversamente: transformar conhecimento em oportunidades, afeto em conexão e aprendizagem em desenvolvimento."
+    ]
+  },
+  "mentoria": {
+    "titulo": "Programas de Mentoria",
+    "subtitulo": "Acompanhamento pedagógico personalizado para preparar sua equipe e elevar o padrão de ensino da sua instituição.",
+    "etapas": [
+      {
+        "titulo": "1. Diagnóstico Institucional",
+        "texto": "Análise profunda das demandas e desafios específicos da equipe docente para alinhamento pedagógico."
+      },
+      {
+        "titulo": "2. Planejamento de Formação",
+        "texto": "Elaboração de um cronograma personalizado de encontros práticos e workshops com especialistas."
+      },
+      {
+        "titulo": "3. Acompanhamento Contínuo",
+        "texto": "Encontros periódicos ao vivo, suporte dedicado e avaliação dos resultados obtidos em sala."
+      }
+    ],
+    "planos": [
+      {
+        "nome": "Mentoria Essencial",
+        "preco": "Consulte condições",
+        "destaque": false,
+        "itens": [
+          "2 encontros mensais ao vivo",
+          "Acesso completo a todas as trilhas",
+          "Materiais e guias exclusivos",
+          "Atendimento via e-mail"
+        ]
+      },
+      {
+        "nome": "Mentoria Completa",
+        "preco": "Consulte condições",
+        "destaque": true,
+        "itens": [
+          "4 encontros mensais ao vivo",
+          "Acesso completo às trilhas",
+          "Trilha customizada com o nome da sua escola",
+          "Canal prioritário no WhatsApp",
+          "Relatórios periódicos de acompanhamento"
+        ]
+      }
+    ]
+  }
+}

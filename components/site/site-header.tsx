@@ -40,10 +40,10 @@ export function SiteHeader() {
           <div className="flex items-center gap-2">
             {usuario ? (
               <Button
-                render={<Link href={usuario.papel === "admin" ? "/admin" : "/conteudos"} />}
+                asChild
                 className="rounded-full"
               >
-                Minha área
+                <Link href={usuario.papel === "admin" ? "/admin" : "/conteudos"}>Minha área</Link>
               </Button>
             ) : (
               <AuthDialog>

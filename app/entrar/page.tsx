@@ -115,7 +115,7 @@ export default function EntrarPage() {
               >
                 <UserRound className="size-4 shrink-0 text-primary" aria-hidden="true" />
                 <span>
-                  <strong>Aluno:</strong> aluno@diversamente.com
+                  <strong>Estudante:</strong> aluno@diversamente.com
                 </span>
               </button>
               <button
@@ -125,7 +125,7 @@ export default function EntrarPage() {
               >
                 <Users className="size-4 shrink-0 text-primary" aria-hidden="true" />
                 <span>
-                  <strong>Pai:</strong> pai@diversamente.com
+                  <strong>Família:</strong> pai@diversamente.com
                 </span>
               </button>
             </div>

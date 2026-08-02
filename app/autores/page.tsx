@@ -1,8 +1,6 @@
 "use client"
 
-import type { Metadata } from "next"
-import Image from "next/image"
-import { Badge } from "@/components/ui/badge"
+import { User } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
 import { PageShell } from "@/components/site/page-shell"
 import { useApp } from "@/lib/app-provider"
@@ -16,42 +14,48 @@ export default function AutoresPage() {
       titulo={configAutores.titulo}
       subtitulo={configAutores.subtitulo}
     >
-      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-        {configAutores.autores.map((autor) => (
-          <Card key={autor.id} className="glass overflow-hidden rounded-3xl border pt-0 shadow-sm transition-transform hover:-translate-y-1">
-            <div className="relative aspect-4/3 w-full overflow-hidden bg-muted">
+      <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
+        {configAutores.autores.map((autor, index) => (
+          <Card
+            key={autor.id || index}
+            className="group glass overflow-hidden rounded-3xl border border-border/60 pt-0 shadow-sm transition-all duration-300 hover:-translate-y-1.5 hover:shadow-xl hover:border-primary/40 hover:bg-card/90"
+          >
+            <div className="relative aspect-4/3 w-full overflow-hidden bg-muted/50">
               {autor.foto ? (
-                <Image
+                <img
                   src={autor.foto}
                   alt={`Retrato de ${autor.nome}`}
-                  fill
-                  sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                  className="object-cover"
-                  unoptimized
+                  loading="eager"
+                  decoding="async"
+                  className="h-full w-full object-cover object-top transition-transform duration-500 group-hover:scale-105"
                 />
               ) : (
-                <div className="flex h-full w-full items-center justify-center text-muted-foreground">Sem imagem</div>
+                <div className="flex h-full w-full flex-col items-center justify-center gap-2 text-muted-foreground">
+                  <User className="size-10 opacity-40" />
+                  <span className="text-xs">Sem foto</span>
+                </div>
               )}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
             </div>
+
             <CardContent className="flex flex-col gap-3 p-6">
-              <div className="flex flex-col gap-0.5">
-                <h2 className="text-lg font-semibold">{autor.nome}</h2>
-                <p className="text-sm text-primary">{autor.cargo}</p>
+              <div className="flex flex-col gap-1">
+                <h2 className="text-xl font-bold tracking-tight transition-colors group-hover:text-primary">
+                  {autor.nome}
+                </h2>
+                <p className="text-xs font-semibold uppercase tracking-wider text-primary/90">
+                  {autor.cargo}
+                </p>
               </div>
-              <div className="flex flex-wrap gap-1.5">
-                {autor.especialidades.map((tag) => (
-                  <Badge key={tag} variant="secondary" className="rounded-full font-normal">
-                    {tag}
-                  </Badge>
-                ))}
-              </div>
-              <p className="text-sm leading-relaxed text-muted-foreground">{autor.bio}</p>
+              <p className="text-sm leading-relaxed text-muted-foreground/90">
+                {autor.bio}
+              </p>
             </CardContent>
           </Card>
         ))}
       </div>
 
-      <section className="glass-strong mt-12 rounded-4xl border p-8 sm:p-12">
+      <section className="glass-strong mt-14 rounded-4xl border p-8 sm:p-12 shadow-sm transition-all duration-300 hover:border-primary/30">
         <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">{configAutores.secaoFinalTitulo}</h2>
         <p className="mt-4 max-w-2xl text-sm leading-relaxed text-muted-foreground sm:text-base">
           {configAutores.secaoFinalTexto}
@@ -60,3 +64,5 @@ export default function AutoresPage() {
     </PageShell>
   )
 }
+
+

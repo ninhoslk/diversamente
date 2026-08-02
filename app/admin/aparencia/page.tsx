@@ -51,10 +51,6 @@ export default function ElementorAparenciaPage() {
         </div>
 
         <div className="flex items-center gap-3">
-          <Button variant="outline" className="rounded-full" onClick={onRestaurar}>
-            <RefreshCw className="size-4" aria-hidden="true" />
-            Restaurar Padrão
-          </Button>
           <Button size="lg" className="rounded-full gap-2 px-6" onClick={onSalvar}>
             <Save className="size-4" aria-hidden="true" />
             Salvar e Publicar Site
