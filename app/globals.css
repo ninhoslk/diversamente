@@ -1,0 +1,135 @@
+@import 'tailwindcss';
+@import 'tw-animate-css';
+@import 'shadcn/tailwind.css';
+
+@theme inline {
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-script), 'Segoe Script', cursive;
+
+  --color-holo-pink: var(--holo-pink);
+  --color-holo-lilac: var(--holo-lilac);
+  --color-holo-blue: var(--holo-blue);
+  --color-holo-mint: var(--holo-mint);
+  --color-holo-yellow: var(--holo-yellow);
+
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --color-foreground: var(--foreground);
+  --color-background: var(--background);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+}
+
+:root {
+  color-scheme: light;
+
+  /* Paleta extraída da identidade holográfica Diversamente */
+  --holo-pink: oklch(0.83 0.09 5);
+  --holo-lilac: oklch(0.8 0.09 300);
+  --holo-blue: oklch(0.85 0.07 235);
+  --holo-mint: oklch(0.88 0.08 165);
+  --holo-yellow: oklch(0.93 0.09 100);
+
+  --background: oklch(0.985 0.008 320);
+  --foreground: oklch(0.34 0.04 305);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.34 0.04 305);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.34 0.04 305);
+  --primary: oklch(0.62 0.16 350);
+  --primary-foreground: oklch(0.99 0.01 340);
+  --secondary: oklch(0.96 0.02 300);
+  --secondary-foreground: oklch(0.4 0.05 305);
+  --muted: oklch(0.96 0.015 300);
+  --muted-foreground: oklch(0.53 0.03 305);
+  --accent: oklch(0.93 0.05 230);
+  --accent-foreground: oklch(0.38 0.06 260);
+  --destructive: oklch(0.6 0.2 20);
+  --border: oklch(0.9 0.02 305);
+  --input: oklch(0.9 0.02 305);
+  --ring: oklch(0.72 0.12 340);
+  --radius: 1rem;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground antialiased;
+  }
+}
+
+@layer utilities {
+  /* Fundo holográfico suave em tons pastel */
+  .holo-surface {
+    background-color: var(--background);
+    background-image:
+      radial-gradient(at 8% 12%, var(--holo-pink) 0px, transparent 55%),
+      radial-gradient(at 92% 8%, var(--holo-yellow) 0px, transparent 50%),
+      radial-gradient(at 78% 62%, var(--holo-blue) 0px, transparent 52%),
+      radial-gradient(at 18% 78%, var(--holo-mint) 0px, transparent 50%),
+      radial-gradient(at 52% 40%, var(--holo-lilac) 0px, transparent 55%);
+  }
+
+  .holo-text {
+    background-image: linear-gradient(
+      100deg,
+      oklch(0.66 0.17 350),
+      oklch(0.62 0.15 300),
+      oklch(0.62 0.13 235),
+      oklch(0.65 0.13 165)
+    );
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  /* Glassmorphism: deixa o gradiente aparecer sutilmente */
+  .glass {
+    background-color: color-mix(in oklab, white 68%, transparent);
+    backdrop-filter: blur(16px) saturate(140%);
+    -webkit-backdrop-filter: blur(16px) saturate(140%);
+    border-color: color-mix(in oklab, white 70%, transparent);
+  }
+
+  .glass-strong {
+    background-color: color-mix(in oklab, white 86%, transparent);
+    backdrop-filter: blur(20px) saturate(150%);
+    -webkit-backdrop-filter: blur(20px) saturate(150%);
+    border-color: color-mix(in oklab, white 75%, transparent);
+  }
+
+  .no-select {
+    user-select: none;
+    -webkit-user-select: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

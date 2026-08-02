@@ -1,0 +1,143 @@
+"use client"
+
+import { use, useMemo, useState } from "react"
+import { notFound } from "next/navigation"
+import { FileText, Gamepad2, Inbox, PlayCircle } from "lucide-react"
+import { Badge } from "@/components/ui/badge"
+import { Card, CardContent } from "@/components/ui/card"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Breadcrumbs } from "@/components/app/breadcrumbs"
+import { MaterialDialog } from "@/components/app/material-dialog"
+import { getCategoria, getTrilha, PUBLICOS, TIPOS, type Material, type TipoMaterial } from "@/lib/catalog"
+import { useApp } from "@/lib/app-provider"
+
+const ICONES: Record<TipoMaterial, typeof FileText> = {
+  pdf: FileText,
+  video: PlayCircle,
+  jogo: Gamepad2,
+}
+
+export default function CategoriaPage({
+  params,
+}: {
+  params: Promise<{ trilha: string; categoria: string }>
+}) {
+  const { trilha: trilhaSlug, categoria: categoriaSlug } = use(params)
+  const { materiais } = useApp()
+  const [selecionado, setSelecionado] = useState<Material | null>(null)
+
+  const trilha = getTrilha(trilhaSlug)
+  const categoria = getCategoria(trilhaSlug, categoriaSlug)
+  if (!trilha || !categoria) notFound()
+
+  const doGrupo = useMemo(
+    () => materiais.filter((m) => m.trilha === trilhaSlug && m.categoria === categoriaSlug),
+    [materiais, trilhaSlug, categoriaSlug],
+  )
+
+  return (
+    <div>
+      <Breadcrumbs
+        itens={[
+          { label: "Conteúdos", href: "/conteudos" },
+          { label: trilha.nome, href: `/conteudos/${trilhaSlug}` },
+          { label: categoria.nome },
+        ]}
+      />
+
+      <header className="flex flex-col gap-3">
+        <h1 className="text-pretty text-3xl font-bold tracking-tight sm:text-4xl">{categoria.nome}</h1>
+        <p className="max-w-2xl text-pretty leading-relaxed text-muted-foreground">
+          Escolha o público e depois o formato do material que deseja acessar.
+        </p>
+      </header>
+
+      {/* Nível 3: sub-abas de público */}
+      <Tabs defaultValue={categoria.publicos[0]} className="mt-8">
+        <TabsList className="glass h-auto flex-wrap justify-start gap-1 rounded-full border p-1.5">
+          {categoria.publicos.map((p) => (
+            <TabsTrigger key={p} value={p} className="rounded-full px-4 py-2 text-sm">
+              {PUBLICOS[p]}
+            </TabsTrigger>
+          ))}
+        </TabsList>
+
+        {categoria.publicos.map((publico) => (
+          <TabsContent key={publico} value={publico} className="mt-6">
+            {/* Filtro por tipo de material */}
+            <Tabs defaultValue="pdf">
+              <TabsList className="rounded-full bg-secondary/70">
+                {TIPOS.map((tipo) => {
+                  const qtd = doGrupo.filter((m) => m.publico === publico && m.tipo === tipo.slug).length
+                  return (
+                    <TabsTrigger key={tipo.slug} value={tipo.slug} className="gap-1.5 rounded-full">
+                      {tipo.label}
+                      <span className="text-xs text-muted-foreground">{qtd}</span>
+                    </TabsTrigger>
+                  )
+                })}
+              </TabsList>
+
+              {TIPOS.map((tipo) => {
+                const lista = doGrupo.filter((m) => m.publico === publico && m.tipo === tipo.slug)
+                const Icone = ICONES[tipo.slug]
+
+                return (
+                  <TabsContent key={tipo.slug} value={tipo.slug} className="mt-6">
+                    {lista.length === 0 ? (
+                      <div className="glass flex flex-col items-center gap-3 rounded-3xl border p-12 text-center">
+                        <Inbox className="size-8 text-muted-foreground" aria-hidden="true" />
+                        <p className="text-sm text-muted-foreground">
+                          Nenhum material deste tipo publicado para {PUBLICOS[publico].toLowerCase()} ainda.
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                        {lista.map((material) => (
+                          <Card
+                            key={material.id}
+                            className="glass group cursor-pointer rounded-3xl border p-0 shadow-sm transition-transform hover:-translate-y-1"
+                          >
+                            <button
+                              type="button"
+                              onClick={() => setSelecionado(material)}
+                              className="w-full text-left"
+                              aria-label={`Abrir ${material.titulo}`}
+                            >
+                              <CardContent className="flex flex-col gap-3 p-6">
+                                <div className="flex items-start justify-between gap-3">
+                                  <span className="flex size-11 items-center justify-center rounded-2xl bg-primary/10">
+                                    <Icone className="size-5 text-primary" aria-hidden="true" />
+                                  </span>
+                                  <Badge variant="secondary" className="rounded-full text-xs font-normal">
+                                    {tipo.label.replace(/s$/, "")}
+                                  </Badge>
+                                </div>
+                                <h2 className="text-pretty font-semibold leading-snug">{material.titulo}</h2>
+                                <p className="text-sm leading-relaxed text-muted-foreground">{material.descricao}</p>
+                                <span className="text-xs text-muted-foreground">
+                                  Publicado em {formatarData(material.criadoEm)}
+                                </span>
+                              </CardContent>
+                            </button>
+                          </Card>
+                        ))}
+                      </div>
+                    )}
+                  </TabsContent>
+                )
+              })}
+            </Tabs>
+          </TabsContent>
+        ))}
+      </Tabs>
+
+      <MaterialDialog material={selecionado} onOpenChange={(aberto) => !aberto && setSelecionado(null)} />
+    </div>
+  )
+}
+
+function formatarData(iso: string) {
+  const [ano, mes, dia] = iso.split("-")
+  return `${dia}/${mes}/${ano}`
+}
