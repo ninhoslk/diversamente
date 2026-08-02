@@ -16,16 +16,16 @@ export default function QuemSomosPage() {
       titulo={quemSomos.titulo}
       subtitulo={quemSomos.subtitulo}
     >
-      <div className="grid gap-6 sm:grid-cols-2">
+      <div className="grid gap-5 sm:grid-cols-2">
         {quemSomos.pilares.map((pilar, index) => {
           const Icone = PILAR_ICONES[index % PILAR_ICONES.length]
           return (
-            <Card key={pilar.titulo} className="rounded-2xl border border-border bg-card shadow-xs transition-all hover:border-primary/40 hover:shadow-md">
+            <Card key={pilar.titulo} className="glass rounded-3xl border shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md hover:border-primary/30">
               <CardContent className="flex flex-col gap-4 p-7">
-                <span className="flex size-11 items-center justify-center rounded-xl bg-accent text-accent-foreground">
-                  <Icone className="size-5" aria-hidden="true" />
+                <span className="flex size-11 items-center justify-center rounded-2xl bg-primary/10">
+                  <Icone className="size-5 text-primary" aria-hidden="true" />
                 </span>
-                <h2 className="font-serif text-xl font-bold text-foreground">{pilar.titulo}</h2>
+                <h2 className="text-xl font-semibold">{pilar.titulo}</h2>
                 <p className="text-sm leading-relaxed text-muted-foreground">{pilar.texto}</p>
               </CardContent>
             </Card>
@@ -33,9 +33,9 @@ export default function QuemSomosPage() {
         })}
       </div>
 
-      <section className="mt-12 rounded-3xl border border-border bg-card p-8 sm:p-12 shadow-xs">
-        <h2 className="font-serif text-2xl font-bold text-foreground sm:text-3xl">{quemSomos.historiaTitulo}</h2>
-        <div className="mt-6 flex flex-col gap-5 text-base leading-relaxed text-muted-foreground">
+      <section className="glass-strong mt-10 rounded-4xl border p-8 sm:p-12 shadow-sm transition-all duration-300 hover:border-primary/30">
+        <h2 className="text-2xl font-bold tracking-tight sm:text-3xl text-balance">{quemSomos.historiaTitulo}</h2>
+        <div className="mt-6 flex flex-col gap-4 text-sm leading-relaxed text-muted-foreground sm:text-base">
           {quemSomos.historiaParagrafos.map((paragrafo, idx) => (
             <p key={idx} className="text-pretty">{paragrafo}</p>
           ))}
@@ -44,3 +44,4 @@ export default function QuemSomosPage() {
     </PageShell>
   )
 }
+

@@ -11,14 +11,14 @@ export function PageShell({
   children: React.ReactNode
 }) {
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <div className="holo-surface min-h-screen">
       <SiteHeader />
-      <main className="mx-auto max-w-6xl px-4 pt-12 pb-16 sm:px-6 sm:pt-16">
-        <header className="flex flex-col gap-3">
-          <h1 className="font-serif text-3xl font-bold tracking-tight text-foreground sm:text-4xl lg:text-5xl">{titulo}</h1>
-          <p className="max-w-3xl text-pretty text-base leading-relaxed text-muted-foreground sm:text-lg">{subtitulo}</p>
+      <main className="mx-auto max-w-6xl px-4 pt-14 sm:px-6 sm:pt-20">
+        <header className="flex flex-col gap-4">
+          <h1 className="text-pretty text-4xl font-bold tracking-tight sm:text-5xl">{titulo}</h1>
+          <p className="max-w-2xl text-pretty text-base leading-relaxed text-foreground/75 sm:text-lg">{subtitulo}</p>
         </header>
-        <div className="mt-10">{children}</div>
+        <div className="mt-12">{children}</div>
       </main>
       <SiteFooter />
     </div>
