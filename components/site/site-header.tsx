@@ -21,7 +21,7 @@ export function SiteHeader() {
 
   return (
     <header className="sticky top-0 z-50">
-      <div className="glass border-b">
+      <div className="bg-card/95 backdrop-blur-md border-b border-border shadow-2xs">
         <div className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between gap-4 px-4 sm:px-6">
           <Logo size="sm" />
 

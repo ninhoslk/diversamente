@@ -13,21 +13,19 @@ export function Logo({
   const tamanhos = {
     sm: "text-xl",
     md: "text-2xl sm:text-3xl",
-    lg: "text-4xl sm:text-5xl",
+    lg: "text-3xl sm:text-4xl",
   }
 
   return (
     <Link
       href={href}
-      className={cn("inline-flex items-center gap-2 transition-opacity hover:opacity-80", className)}
+      className={cn("inline-flex items-center gap-2.5 transition-opacity hover:opacity-90", className)}
       aria-label="Diversamente — página inicial"
     >
-      <span
-        className={cn(
-          "font-display italic tracking-tight holo-text font-semibold leading-none pb-1",
-          tamanhos[size],
-        )}
-      >
+      <span className="flex size-8 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground font-serif font-bold text-base shadow-sm">
+        D
+      </span>
+      <span className={cn("font-serif font-bold tracking-tight text-foreground", tamanhos[size])}>
         Diversamente
       </span>
     </Link>
