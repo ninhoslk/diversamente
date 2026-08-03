@@ -1,99 +1,137 @@
 "use client"
 
 import { useCallback, useEffect, useRef, useState } from "react"
-import { ChevronLeft, ChevronRight, FileWarning, Loader2, ZoomIn, ZoomOut } from "lucide-react"
+import { ChevronLeft, ChevronRight, ExternalLink, FileWarning, Loader2, RefreshCw, ZoomIn, ZoomOut } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
-/**
- * Leitor de PDF protegido.
- * - Renderiza via canvas (pdfjs), nunca com o iframe nativo do navegador.
- * - Carrega e desenha apenas a página atual (lazy loading / paginação), sem manter
- *   o documento inteiro renderizado em memória.
- * - Sem botões de download/impressão e com menu de contexto desabilitado.
- */
-export function PdfViewer({ url, titulo }: { url: string; titulo: string }) {
+function formatarUrlPdf(urlOriginal: string): string {
+  if (!urlOriginal) return ""
+  let url = urlOriginal.trim()
+
+  // Converte links de visualizacao do Google Drive em links de preview incorporados
+  if (url.includes("drive.google.com")) {
+    const match = url.match(/\/file\/d\/([^\/]+)/) || url.match(/id=([^&]+)/)
+    if (match && match[1]) {
+      return `https://drive.google.com/file/d/${match[1]}/preview`
+    }
+  }
+
+  return url
+}
+
+export function PdfViewer({ url: urlProp, titulo }: { url: string; titulo: string }) {
+  const url = formatarUrlPdf(urlProp)
+  const isGoogleDrive = url.includes("drive.google.com")
+
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const docRef = useRef<{ numPages: number; getPage: (n: number) => Promise<unknown> } | null>(null)
   const renderTaskRef = useRef<{ cancel: () => void } | null>(null)
+
   const [totalPaginas, setTotalPaginas] = useState(0)
   const [pagina, setPagina] = useState(1)
   const [escala, setEscala] = useState(1.1)
   const [carregando, setCarregando] = useState(true)
+  const [usarFallbackIframe, setUsarFallbackIframe] = useState(isGoogleDrive)
   const [erro, setErro] = useState<string | null>(null)
 
-  // Carrega o documento uma única vez.
+  // Tenta carregar via PDF.js se não for link direto do Google Drive/Iframe
   useEffect(() => {
     let cancelado = false
 
-    async function carregar() {
+    async function carregarPdfJs() {
       if (!url) {
-        setErro("Este material ainda não possui arquivo publicado.")
+        setErro("Este material ainda não possui um arquivo válido cadastrado.")
         setCarregando(false)
         return
       }
+
+      // Se for Google Drive preview ou se já ativou fallback, usa Iframe direto
+      if (isGoogleDrive) {
+        setUsarFallbackIframe(true)
+        setCarregando(false)
+        return
+      }
+
       try {
+        setCarregando(true)
+        setErro(null)
+
         const pdfjs = await import("react-pdf").then((m) => m.pdfjs)
         pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`
+
         const doc = await pdfjs.getDocument({ url }).promise
         if (cancelado) return
+
         docRef.current = doc as never
         setTotalPaginas(doc.numPages)
         setPagina(1)
+        setUsarFallbackIframe(false)
       } catch (e) {
-        console.error("Erro ao carregar documento PDF:", e)
-        if (!cancelado) setErro("Não foi possível abrir este documento.")
+        console.warn("PDF.js não pôde processar o arquivo diretamente, ativando leitor alternativo:", e)
+        if (!cancelado) {
+          // Ativa o leitor alternativo em iframe/Google Docs Viewer para evitar falha
+          setUsarFallbackIframe(true)
+        }
       } finally {
         if (!cancelado) setCarregando(false)
       }
     }
 
-    carregar()
+    carregarPdfJs()
+
     return () => {
       cancelado = true
       docRef.current = null
     }
-  }, [url])
+  }, [url, isGoogleDrive])
 
-  // Renderiza apenas a página atual.
-  const renderizar = useCallback(async () => {
+  // Renderiza a pagina no Canvas (quando usando PDF.js)
+  const renderizarPagina = useCallback(async () => {
     const doc = docRef.current
     const canvas = canvasRef.current
-    if (!doc || !canvas) return
+    if (!doc || !canvas || usarFallbackIframe) return
 
     renderTaskRef.current?.cancel()
 
-    const page = (await doc.getPage(pagina)) as {
-      getViewport: (o: { scale: number }) => { width: number; height: number }
-      render: (o: unknown) => { promise: Promise<void>; cancel: () => void }
-    }
-    const dpr = Math.min(window.devicePixelRatio || 1, 2)
-    const viewport = page.getViewport({ scale: escala })
-    const ctx = canvas.getContext("2d")
-    if (!ctx) return
-
-    canvas.width = Math.floor(viewport.width * dpr)
-    canvas.height = Math.floor(viewport.height * dpr)
-    canvas.style.width = "100%"
-    canvas.style.height = "auto"
-
-    const task = page.render({ canvasContext: ctx, viewport, transform: dpr !== 1 ? [dpr, 0, 0, dpr, 0, 0] : undefined })
-    renderTaskRef.current = task
     try {
+      const page = (await doc.getPage(pagina)) as {
+        getViewport: (o: { scale: number }) => { width: number; height: number }
+        render: (o: unknown) => { promise: Promise<void>; cancel: () => void }
+      }
+      const dpr = Math.min(window.devicePixelRatio || 1, 2)
+      const viewport = page.getViewport({ scale: escala })
+      const ctx = canvas.getContext("2d")
+      if (!ctx) return
+
+      canvas.width = Math.floor(viewport.width * dpr)
+      canvas.height = Math.floor(viewport.height * dpr)
+      canvas.style.width = "100%"
+      canvas.style.height = "auto"
+
+      const task = page.render({
+        canvasContext: ctx,
+        viewport,
+        transform: dpr !== 1 ? [dpr, 0, 0, dpr, 0, 0] : undefined,
+      })
+      renderTaskRef.current = task
       await task.promise
     } catch {
-      // render cancelado ao trocar de página — comportamento esperado
+      // cancelamento normal de troca de pagina
     }
-  }, [pagina, escala])
+  }, [pagina, escala, usarFallbackIframe])
 
   useEffect(() => {
-    if (totalPaginas > 0) renderizar()
+    if (totalPaginas > 0 && !usarFallbackIframe) {
+      renderizarPagina()
+    }
     return () => renderTaskRef.current?.cancel()
-  }, [totalPaginas, renderizar])
+  }, [totalPaginas, renderizarPagina, usarFallbackIframe])
 
   if (carregando) {
     return (
-      <div className="flex min-h-80 items-center justify-center rounded-2xl bg-secondary/50">
-        <Loader2 className="size-6 animate-spin text-primary" aria-label="Carregando documento" />
+      <div className="flex min-h-96 flex-col items-center justify-center gap-3 rounded-2xl bg-secondary/50 p-8">
+        <Loader2 className="size-7 animate-spin text-primary" aria-label="Carregando PDF..." />
+        <p className="text-xs text-muted-foreground">Preparando visualizador do documento...</p>
       </div>
     )
   }
@@ -102,11 +140,48 @@ export function PdfViewer({ url, titulo }: { url: string; titulo: string }) {
     return (
       <div className="flex min-h-80 flex-col items-center justify-center gap-3 rounded-2xl bg-secondary/50 p-8 text-center">
         <FileWarning className="size-8 text-muted-foreground" aria-hidden="true" />
-        <p className="text-sm text-muted-foreground">{erro}</p>
+        <p className="text-sm font-medium text-foreground">{erro}</p>
+        <Button asChild variant="outline" size="sm" className="mt-2 rounded-full">
+          <a href={url} target="_blank" rel="noopener noreferrer">
+            <ExternalLink className="size-3.5" /> Abrir link do arquivo
+          </a>
+        </Button>
       </div>
     )
   }
 
+  // MODO 1: Leitor via Iframe (para Google Drive ou quando a estrutura do PDF exige visualizador nativo)
+  if (usarFallbackIframe) {
+    const embedUrl = isGoogleDrive
+      ? url
+      : `https://docs.google.com/viewer?url=${encodeURIComponent(url)}&embedded=true`
+
+    return (
+      <div className="flex flex-col gap-3">
+        <div className="relative aspect-[4/3] w-full min-h-[500px] overflow-hidden rounded-2xl border border-border bg-card shadow-xs">
+          <iframe
+            src={embedUrl}
+            title={`Leitor de PDF - ${titulo}`}
+            className="h-full w-full border-0"
+            allow="autoplay"
+          />
+        </div>
+        <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
+          <span>Visualizador seguro ativado.</span>
+          <a
+            href={url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1 font-medium text-primary hover:underline"
+          >
+            Abrir arquivo completo <ExternalLink className="size-3" />
+          </a>
+        </div>
+      </div>
+    )
+  }
+
+  // MODO 2: Leitor via Canvas PDF.js (Sem downloads e protegido)
   return (
     <div className="flex flex-col gap-4">
       <div
@@ -163,11 +238,20 @@ export function PdfViewer({ url, titulo }: { url: string; titulo: string }) {
           >
             <ZoomIn className="size-4" />
           </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            className="rounded-full bg-card/80 text-xs"
+            onClick={() => setUsarFallbackIframe(true)}
+            title="Alternar para o leitor em modo tela cheia/embed"
+          >
+            <RefreshCw className="size-3.5" /> Alternar leitor
+          </Button>
         </div>
       </div>
 
       <p className="text-xs text-muted-foreground">
-        Material protegido — visualização exclusiva na plataforma. Download e impressão desabilitados.
+        Material pedagógico exclusivo — visualização protegida na plataforma.
       </p>
     </div>
   )

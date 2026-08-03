@@ -3,7 +3,13 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react"
 import { MATERIAIS_INICIAIS, type Material } from "@/lib/catalog"
 import { CONFIG_PADRAO_SITE, type SiteConfig } from "@/lib/site-config"
-import { fetchSupabaseSiteConfig, saveSupabaseSiteConfig } from "@/lib/supabase"
+import {
+  fetchSupabaseMateriais,
+  fetchSupabaseSiteConfig,
+  inscreverSupabaseRealtime,
+  saveSupabaseMateriais,
+  saveSupabaseSiteConfig,
+} from "@/lib/supabase"
 
 export type Papel = "admin" | "professor" | "aluno" | "pai" | "visitante"
 
@@ -69,36 +75,41 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       // ignora erros de parsing em ambiente de dev
     }
 
-    async function carregarConfiguracoes() {
-      // 1. Tenta buscar a configuração global direto do Supabase DB
+    async function carregarDadosGlobais() {
+      // 1. Carrega configuracoes do layout (Elementor) do Supabase DB
       const configSupabase = await fetchSupabaseSiteConfig()
       if (configSupabase && configSupabase.home) {
         setSiteConfig(configSupabase)
-        setCarregando(false)
-        return
+      } else {
+        try {
+          const res = await fetch("/api/site-config")
+          const data = await res.json()
+          if (data && typeof data === "object" && data.home) {
+            setSiteConfig(data)
+          }
+        } catch {}
       }
 
-      // 2. Tenta buscar da API local caso Supabase DB ainda não tenha a tabela criada
-      try {
-        const res = await fetch("/api/site-config")
-        const data = await res.json()
-        if (data && typeof data === "object" && data.home) {
-          setSiteConfig(data)
-          setCarregando(false)
-          return
-        }
-      } catch {}
-
-      // 3. Fallback localStorage
-      try {
-        const configSalva = localStorage.getItem(CHAVE_SITE_CONFIG)
-        if (configSalva) setSiteConfig(JSON.parse(configSalva))
-      } catch {}
+      // 2. Carrega materiais globais (PDFs, videos, jogos) do Supabase DB
+      const materiaisSupabase = await fetchSupabaseMateriais()
+      if (materiaisSupabase && Array.isArray(materiaisSupabase) && materiaisSupabase.length > 0) {
+        setMateriais(materiaisSupabase)
+      }
 
       setCarregando(false)
     }
 
-    carregarConfiguracoes()
+    carregarDadosGlobais()
+
+    // 3. Inscreve no Supabase Realtime para sincronizar alteracoes instantaneamente em todas as abas e navegadores
+    const cancelarRealtime = inscreverSupabaseRealtime(
+      (novaConfig) => setSiteConfig(novaConfig),
+      (novosMateriais) => setMateriais(novosMateriais)
+    )
+
+    return () => {
+      cancelarRealtime()
+    }
   }, [])
 
   const persistirSessao = useCallback((u: Usuario | null) => {
@@ -178,6 +189,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         },
         ...anteriores,
       ]
+      // 1. Salva no Supabase DB (afeta imediatamente todas as guias e navegadores do mundo)
+      saveSupabaseMateriais(novaLista).catch(() => {})
+      // 2. Salva no localStorage
       try {
         localStorage.setItem(CHAVE_MATERIAIS, JSON.stringify(novaLista))
       } catch {}
@@ -188,6 +202,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const removerMaterial = useCallback((id: string) => {
     setMateriais((anteriores) => {
       const novaLista = anteriores.filter((m) => m.id !== id)
+      // 1. Salva no Supabase DB (afeta imediatamente todas as guias e navegadores do mundo)
+      saveSupabaseMateriais(novaLista).catch(() => {})
+      // 2. Salva no localStorage
       try {
         localStorage.setItem(CHAVE_MATERIAIS, JSON.stringify(novaLista))
       } catch {}
@@ -210,7 +227,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
     // 3. Salva no localStorage
     try {
-      localStorage.setItem(CHAVE_SITE_CONFIG, JSON.stringify(novaConfig),)
+      localStorage.setItem(CHAVE_SITE_CONFIG, JSON.stringify(novaConfig))
     } catch {
       // ignora
     }
