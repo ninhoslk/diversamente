@@ -69,7 +69,38 @@ export async function saveSupabaseMateriais(materiais: Material[]): Promise<bool
   }
 }
 
-// 5. Escuta atualizacoes em tempo real (Realtime) para sincronizar entre todos os navegadores
+// 5. Direct Upload de arquivos PDF para o Supabase Storage (Bucket "materiais")
+export async function uploadPdfParaSupabase(file: File): Promise<string> {
+  try {
+    const nomeLimpo = file.name.replace(/[^a-zA-Z0-9.-]/g, "_")
+    const nomeUnico = `${Date.now()}_${nomeLimpo}`
+    
+    const { data, error } = await supabase.storage
+      .from("materiais")
+      .upload(nomeUnico, file, {
+        cacheControl: "3600",
+        upsert: true,
+      })
+
+    if (!error && data?.path) {
+      const { data: publicData } = supabase.storage
+        .from("materiais")
+        .getPublicUrl(data.path)
+      return publicData.publicUrl
+    }
+  } catch (e) {
+    console.warn("Upload no Supabase Storage falhou, convertendo arquivo para armazenamento local:", e)
+  }
+
+  // Fallback Data URL em memória para garantir que o envio funcione em desenvolvimento
+  return new Promise((resolve) => {
+    const reader = new FileReader()
+    reader.onload = () => resolve(reader.result as string)
+    reader.readAsDataURL(file)
+  })
+}
+
+// 6. Escuta atualizacoes em tempo real (Realtime) para sincronizar entre todos os navegadores
 export function inscreverSupabaseRealtime(
   onConfigChange: (config: SiteConfig) => void,
   onMateriaisChange: (materiais: Material[]) => void

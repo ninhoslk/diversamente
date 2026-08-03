@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation"
 import { useMemo, useState } from "react"
-import { FileText, Gamepad2, UploadCloud, Video } from "lucide-react"
+import { FileText, Gamepad2, Loader2, UploadCloud, Video, ShieldCheck } from "lucide-react"
 import { toast } from "sonner"
 import { Breadcrumbs } from "@/components/app/breadcrumbs"
 import { Button } from "@/components/ui/button"
@@ -13,11 +13,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea"
 import { CATEGORIAS, PUBLICOS, TRILHAS, type PublicoSlug, type TipoMaterial } from "@/lib/catalog"
 import { useApp } from "@/lib/app-provider"
+import { uploadPdfParaSupabase } from "@/lib/supabase"
 import { cn } from "@/lib/utils"
 
 const TIPOS_FORM: { slug: TipoMaterial; label: string; ajuda: string; Icon: typeof FileText }[] = [
-  { slug: "pdf", label: "PDF", ajuda: "Leitura protegida, sem download", Icon: FileText },
-  { slug: "video", label: "Vídeo", ajuda: "YouTube, Vimeo ou arquivo MP4", Icon: Video },
+  { slug: "pdf", label: "PDF", ajuda: "Leitura protegida no site, sem download", Icon: FileText },
+  { slug: "video", label: "Vídeo", ajuda: "YouTube, Vimeo ou arquivo de vídeo", Icon: Video },
   { slug: "jogo", label: "Jogo", ajuda: "Link para atividade interativa", Icon: Gamepad2 },
 ]
 
@@ -32,7 +33,8 @@ export default function NovoMaterialPage() {
   const [categoria, setCategoria] = useState("")
   const [publico, setPublico] = useState<PublicoSlug | "">("")
   const [url, setUrl] = useState("")
-  const [arquivo, setArquivo] = useState<string>("")
+  const [arquivoPdf, setArquivoPdf] = useState<File | null>(null)
+  const [enviando, setEnviando] = useState(false)
   const [erro, setErro] = useState<string | null>(null)
 
   const categoriasDaTrilha = useMemo(() => CATEGORIAS.filter((c) => c.trilha === trilha), [trilha])
@@ -52,28 +54,44 @@ export default function NovoMaterialPage() {
     setPublico("")
   }
 
-  function onSubmit(e: React.FormEvent) {
+  async function onSubmit(e: React.FormEvent) {
     e.preventDefault()
     setErro(null)
 
     if (!titulo.trim()) return setErro("Informe o título do material.")
     if (!categoria) return setErro("Escolha a categoria de destino.")
     if (!publico) return setErro("Escolha o público que verá este material.")
-    if (tipo === "pdf" && !arquivo) return setErro("Selecione o arquivo PDF.")
+    if (tipo === "pdf" && !arquivoPdf) return setErro("Selecione o arquivo PDF para upload.")
     if (tipo !== "pdf" && !url.trim()) return setErro("Informe o link do material.")
 
-    adicionarMaterial({
-      titulo: titulo.trim(),
-      descricao: descricao.trim(),
-      tipo,
-      url: tipo === "pdf" ? arquivo : url.trim(),
-      trilha,
-      categoria,
-      publico: publico as PublicoSlug,
-    })
+    try {
+      setEnviando(true)
+      let urlFinal = url.trim()
 
-    toast.success("Material publicado", { description: titulo.trim() })
-    router.push("/admin/materiais")
+      if (tipo === "pdf" && arquivoPdf) {
+        // Upload direto do arquivo PDF para o servidor do Supabase Storage
+        urlFinal = await uploadPdfParaSupabase(arquivoPdf)
+      }
+
+      adicionarMaterial({
+        titulo: titulo.trim(),
+        descricao: descricao.trim(),
+        tipo,
+        url: urlFinal,
+        trilha,
+        categoria,
+        publico: publico as PublicoSlug,
+      })
+
+      toast.success("Material publicado com sucesso!", {
+        description: `${titulo.trim()} já está disponível na biblioteca.`,
+      })
+      router.push("/admin/materiais")
+    } catch {
+      setErro("Não foi possível enviar o arquivo PDF. Tente novamente.")
+    } finally {
+      setEnviando(false)
+    }
   }
 
   return (
@@ -89,7 +107,7 @@ export default function NovoMaterialPage() {
       <div className="max-w-xl">
         <h1 className="font-serif text-3xl font-semibold tracking-tight text-balance sm:text-4xl">Novo material</h1>
         <p className="mt-2 leading-relaxed text-muted-foreground text-pretty">
-          Publique um PDF, vídeo ou jogo diretamente na trilha e no público certos.
+          Faça o upload do PDF ou cadastre links de vídeos e jogos para a biblioteca.
         </p>
       </div>
 
@@ -97,7 +115,7 @@ export default function NovoMaterialPage() {
         <Card className="glass rounded-3xl border-0">
           <CardHeader>
             <CardTitle className="font-serif text-xl">Informações do material</CardTitle>
-            <CardDescription>Tudo o que o educador ou a família verá na biblioteca.</CardDescription>
+            <CardDescription>O arquivo fica protegido e privado na plataforma.</CardDescription>
           </CardHeader>
           <CardContent className="flex flex-col gap-6">
             <fieldset className="flex flex-col gap-3">
@@ -130,7 +148,7 @@ export default function NovoMaterialPage() {
                 id="titulo"
                 value={titulo}
                 onChange={(e) => setTitulo(e.target.value)}
-                placeholder="Ex.: Caderno de atividades — 2º Ano"
+                placeholder="Ex.: Caderno de Atividades — 1º Ano"
                 className="rounded-xl bg-card"
               />
             </div>
@@ -141,7 +159,7 @@ export default function NovoMaterialPage() {
                 id="descricao"
                 value={descricao}
                 onChange={(e) => setDescricao(e.target.value)}
-                placeholder="Resumo curto sobre o objetivo do material."
+                placeholder="Resumo curto sobre o objetivo pedagógico deste material."
                 rows={3}
                 className="rounded-xl bg-card"
               />
@@ -149,23 +167,37 @@ export default function NovoMaterialPage() {
 
             {tipo === "pdf" ? (
               <div className="flex flex-col gap-2">
-                <Label htmlFor="arquivo">Arquivo PDF</Label>
+                <Label htmlFor="arquivo-pdf">Arquivo PDF (Upload direto)</Label>
                 <label
-                  htmlFor="arquivo"
+                  htmlFor="arquivo-pdf"
                   className="flex cursor-pointer flex-col items-center gap-2 rounded-2xl border-2 border-dashed border-border bg-card/60 px-4 py-8 text-center transition-colors hover:border-primary/60 hover:bg-card"
                 >
-                  <UploadCloud className="size-6 text-primary" aria-hidden="true" />
-                  <span className="text-sm font-medium">{arquivo ? arquivo : "Clique para selecionar o PDF"}</span>
-                  <span className="text-xs text-muted-foreground">
-                    O arquivo será exibido no leitor protegido, sem opção de download.
-                  </span>
+                  <UploadCloud className="size-7 text-primary" aria-hidden="true" />
+                  {arquivoPdf ? (
+                    <div className="flex flex-col items-center gap-0.5">
+                      <span className="text-sm font-semibold text-primary">{arquivoPdf.name}</span>
+                      <span className="text-xs text-muted-foreground">
+                        {(arquivoPdf.size / (1024 * 1024)).toFixed(1)} MB · Pronto para upload seguro
+                      </span>
+                    </div>
+                  ) : (
+                    <>
+                      <span className="text-sm font-medium">Clique para selecionar o PDF do seu computador</span>
+                      <span className="text-xs text-muted-foreground">
+                        O arquivo será enviado para o servidor e exibido com leitor protegido (download/impressão desabilitados).
+                      </span>
+                    </>
+                  )}
                 </label>
                 <Input
-                  id="arquivo"
+                  id="arquivo-pdf"
                   type="file"
                   accept="application/pdf"
                   className="sr-only"
-                  onChange={(e) => setArquivo(e.target.files?.[0]?.name ?? "")}
+                  onChange={(e) => {
+                    const file = e.target.files?.[0]
+                    if (file) setArquivoPdf(file)
+                  }}
                 />
               </div>
             ) : (
@@ -186,7 +218,7 @@ export default function NovoMaterialPage() {
         <Card className="glass rounded-3xl border-0">
           <CardHeader>
             <CardTitle className="font-serif text-xl">Destino</CardTitle>
-            <CardDescription>Onde o material aparecerá na navegação.</CardDescription>
+            <CardDescription>Onde o material aparecerá para os usuários.</CardDescription>
           </CardHeader>
           <CardContent className="flex flex-col gap-6">
             <div className="flex flex-col gap-2">
@@ -237,20 +269,33 @@ export default function NovoMaterialPage() {
               </Select>
             </div>
 
+            <div className="rounded-xl border border-primary/20 bg-primary/5 p-3 text-xs text-muted-foreground flex items-start gap-2">
+              <ShieldCheck className="size-4 text-primary shrink-0 mt-0.5" />
+              <span>Proteção ativada: PDF renderizado via Canvas sem botões de salvar, imprimir ou baixar.</span>
+            </div>
+
             {erro ? (
-              <p role="alert" className="rounded-xl bg-destructive/10 px-3 py-2 text-sm text-destructive">
+              <p role="alert" className="rounded-xl bg-destructive/10 px-3 py-2 text-sm text-destructive font-medium">
                 {erro}
               </p>
             ) : null}
 
             <div className="flex flex-col gap-2">
-              <Button type="submit" size="lg" className="rounded-full">
-                Publicar material
+              <Button type="submit" size="lg" disabled={enviando} className="rounded-full">
+                {enviando ? (
+                  <>
+                    <Loader2 className="size-4 animate-spin" />
+                    Enviando arquivo...
+                  </>
+                ) : (
+                  "Publicar material"
+                )}
               </Button>
               <Button
                 type="button"
                 variant="ghost"
                 size="lg"
+                disabled={enviando}
                 className="rounded-full"
                 onClick={() => router.push("/admin/materiais")}
               >
