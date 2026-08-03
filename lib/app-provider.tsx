@@ -53,6 +53,7 @@ const CHAVE_SESSAO = "diversamente:sessao"
 const CHAVE_USUARIOS = "diversamente:usuarios"
 const CHAVE_SITE_CONFIG = "diversamente:site-config"
 const CHAVE_MATERIAIS = "diversamente:materiais"
+const CHAVE_MATERIAIS_INICIALIZADO = "diversamente:materiais-inicializado"
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
   const [usuario, setUsuario] = useState<Usuario | null>(null)
@@ -69,12 +70,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       const usuariosSalvos = localStorage.getItem(CHAVE_USUARIOS)
       if (usuariosSalvos) setUsuarios(JSON.parse(usuariosSalvos))
 
-      const materiaisSalvos = localStorage.getItem(CHAVE_MATERIAIS)
-      if (materiaisSalvos) {
-        const parsed = JSON.parse(materiaisSalvos)
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          setMateriais(parsed)
-        }
+      const salvos = localStorage.getItem(CHAVE_MATERIAIS)
+      const jaInicializado = localStorage.getItem(CHAVE_MATERIAIS_INICIALIZADO)
+      if (salvos !== null && jaInicializado === "true") {
+        setMateriais(JSON.parse(salvos))
       }
     } catch {
       // ignora erros de parsing em ambiente de dev
@@ -95,10 +94,31 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         } catch {}
       }
 
-      // 2. Carrega materiais globais (PDFs, videos, jogos) do Supabase DB
+      // 2. Carrega materiais do Supabase DB
       const materiaisSupabase = await fetchSupabaseMateriais()
-      if (materiaisSupabase && Array.isArray(materiaisSupabase) && materiaisSupabase.length > 0) {
+      if (materiaisSupabase !== null && Array.isArray(materiaisSupabase)) {
         setMateriais(materiaisSupabase)
+        try {
+          localStorage.setItem(CHAVE_MATERIAIS, JSON.stringify(materiaisSupabase))
+          localStorage.setItem(CHAVE_MATERIAIS_INICIALIZADO, "true")
+        } catch {}
+      } else {
+        // Se nunca foi salvo no Supabase ainda, verifica se tem no localStorage
+        const salvos = localStorage.getItem(CHAVE_MATERIAIS)
+        const jaInicializado = localStorage.getItem(CHAVE_MATERIAIS_INICIALIZADO)
+        if (salvos !== null && jaInicializado === "true") {
+          try {
+            setMateriais(JSON.parse(salvos))
+          } catch {}
+        } else {
+          // Primeira execução absoluta: salva os iniciais no Supabase DB para registrar a versão inicial oficial
+          setMateriais(MATERIAIS_INICIAIS)
+          saveSupabaseMateriais(MATERIAIS_INICIAIS).catch(() => {})
+          try {
+            localStorage.setItem(CHAVE_MATERIAIS, JSON.stringify(MATERIAIS_INICIAIS))
+            localStorage.setItem(CHAVE_MATERIAIS_INICIALIZADO, "true")
+          } catch {}
+        }
       }
 
       setCarregando(false)
@@ -110,8 +130,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     const cancelarRealtime = inscreverSupabaseRealtime(
       (novaConfig) => setSiteConfig(novaConfig),
       (novosMateriais) => {
-        if (Array.isArray(novosMateriais) && novosMateriais.length > 0) {
+        if (Array.isArray(novosMateriais)) {
           setMateriais(novosMateriais)
+          try {
+            localStorage.setItem(CHAVE_MATERIAIS, JSON.stringify(novosMateriais))
+            localStorage.setItem(CHAVE_MATERIAIS_INICIALIZADO, "true")
+          } catch {}
         }
       }
     )
@@ -201,6 +225,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       saveSupabaseMateriais(novaLista).catch(() => {})
       try {
         localStorage.setItem(CHAVE_MATERIAIS, JSON.stringify(novaLista))
+        localStorage.setItem(CHAVE_MATERIAIS_INICIALIZADO, "true")
       } catch {}
       return novaLista
     })
@@ -208,12 +233,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const removerMaterial = useCallback((id: string) => {
     setMateriais((anteriores) => {
-      const filtrada = anteriores.filter((m) => m.id !== id)
-      // Se apagar tudo, mantém pelo menos a lista de backup dos materiais de catálogo
-      const novaLista = filtrada.length > 0 ? filtrada : MATERIAIS_INICIAIS
+      const novaLista = anteriores.filter((m) => m.id !== id)
       saveSupabaseMateriais(novaLista).catch(() => {})
       try {
         localStorage.setItem(CHAVE_MATERIAIS, JSON.stringify(novaLista))
+        localStorage.setItem(CHAVE_MATERIAIS_INICIALIZADO, "true")
       } catch {}
       return novaLista
     })
