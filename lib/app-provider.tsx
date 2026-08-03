@@ -70,7 +70,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       if (usuariosSalvos) setUsuarios(JSON.parse(usuariosSalvos))
 
       const materiaisSalvos = localStorage.getItem(CHAVE_MATERIAIS)
-      if (materiaisSalvos) setMateriais(JSON.parse(materiaisSalvos))
+      if (materiaisSalvos) {
+        const parsed = JSON.parse(materiaisSalvos)
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setMateriais(parsed)
+        }
+      }
     } catch {
       // ignora erros de parsing em ambiente de dev
     }
@@ -101,10 +106,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
     carregarDadosGlobais()
 
-    // 3. Inscreve no Supabase Realtime para sincronizar alteracoes instantaneamente em todas as abas e navegadores
+    // 3. Inscreve no Supabase Realtime para sincronizar alteracoes instantaneamente
     const cancelarRealtime = inscreverSupabaseRealtime(
       (novaConfig) => setSiteConfig(novaConfig),
-      (novosMateriais) => setMateriais(novosMateriais)
+      (novosMateriais) => {
+        if (Array.isArray(novosMateriais) && novosMateriais.length > 0) {
+          setMateriais(novosMateriais)
+        }
+      }
     )
 
     return () => {
@@ -189,9 +198,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         },
         ...anteriores,
       ]
-      // 1. Salva no Supabase DB (afeta imediatamente todas as guias e navegadores do mundo)
       saveSupabaseMateriais(novaLista).catch(() => {})
-      // 2. Salva no localStorage
       try {
         localStorage.setItem(CHAVE_MATERIAIS, JSON.stringify(novaLista))
       } catch {}
@@ -201,10 +208,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const removerMaterial = useCallback((id: string) => {
     setMateriais((anteriores) => {
-      const novaLista = anteriores.filter((m) => m.id !== id)
-      // 1. Salva no Supabase DB (afeta imediatamente todas as guias e navegadores do mundo)
+      const filtrada = anteriores.filter((m) => m.id !== id)
+      // Se apagar tudo, mantém pelo menos a lista de backup dos materiais de catálogo
+      const novaLista = filtrada.length > 0 ? filtrada : MATERIAIS_INICIAIS
       saveSupabaseMateriais(novaLista).catch(() => {})
-      // 2. Salva no localStorage
       try {
         localStorage.setItem(CHAVE_MATERIAIS, JSON.stringify(novaLista))
       } catch {}
@@ -215,17 +222,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const atualizarSiteConfig = useCallback((novaConfig: SiteConfig) => {
     setSiteConfig(novaConfig)
     
-    // 1. Salva no Supabase DB (afeta imediatamente todos os navegadores, produção e localhost)
     saveSupabaseSiteConfig(novaConfig).catch(() => {})
 
-    // 2. Salva na API local
     fetch("/api/site-config", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(novaConfig),
     }).catch(() => {})
 
-    // 3. Salva no localStorage
     try {
       localStorage.setItem(CHAVE_SITE_CONFIG, JSON.stringify(novaConfig))
     } catch {
