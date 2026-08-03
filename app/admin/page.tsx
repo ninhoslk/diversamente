@@ -1,16 +1,27 @@
 "use client"
 
 import Link from "next/link"
-import { FileText, Gamepad2, PlusCircle, Video, Layers, Users, Palette, ShieldCheck } from "lucide-react"
+import { useState } from "react"
+import { AlertTriangle, FileText, Gamepad2, PlusCircle, Video, Layers, Users, Palette, Trash2 } from "lucide-react"
+import { toast } from "sonner"
 import { Breadcrumbs } from "@/components/app/breadcrumbs"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 import { CATEGORIAS, PUBLICOS, TRILHAS } from "@/lib/catalog"
 import { useApp } from "@/lib/app-provider"
 
 export default function AdminPage() {
-  const { materiais, usuarios } = useApp()
+  const { materiais, usuarios, removerMaterial } = useApp()
+  const [materialParaRemover, setMaterialParaRemover] = useState<{ id: string; titulo: string } | null>(null)
 
   const totalPdf = materiais.filter((m) => m.tipo === "pdf").length
   const totalVideo = materiais.filter((m) => m.tipo === "video").length
@@ -24,6 +35,13 @@ export default function AdminPage() {
   ]
 
   const recentes = [...materiais].sort((a, b) => b.criadoEm.localeCompare(a.criadoEm)).slice(0, 5)
+
+  function confirmarRemocao() {
+    if (!materialParaRemover) return
+    removerMaterial(materialParaRemover.id)
+    toast.success("Material excluído com sucesso", { description: materialParaRemover.titulo })
+    setMaterialParaRemover(null)
+  }
 
   return (
     <>
@@ -79,28 +97,43 @@ export default function AdminPage() {
             <CardDescription>Os últimos itens adicionados à biblioteca.</CardDescription>
           </CardHeader>
           <CardContent className="flex flex-col gap-3">
-            {recentes.map((m) => {
-              const trilha = TRILHAS.find((t) => t.slug === m.trilha)
-              const categoria = CATEGORIAS.find((c) => c.slug === m.categoria)
-              return (
-                <div
-                  key={m.id}
-                  className="flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-card/70 px-4 py-3"
-                >
-                  <div className="min-w-0">
-                    <p className="truncate text-sm font-medium">{m.titulo}</p>
-                    <p className="mt-0.5 truncate text-xs text-muted-foreground">
-                      {trilha?.nome} · {categoria?.nome} · {PUBLICOS[m.publico]}
-                    </p>
+            {recentes.length === 0 ? (
+              <p className="py-6 text-center text-sm text-muted-foreground">Nenhum material cadastrado.</p>
+            ) : (
+              recentes.map((m) => {
+                const trilha = TRILHAS.find((t) => t.slug === m.trilha)
+                const categoria = CATEGORIAS.find((c) => c.slug === m.categoria)
+                return (
+                  <div
+                    key={m.id}
+                    className="flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-card/70 px-4 py-3"
+                  >
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-medium">{m.titulo}</p>
+                      <p className="mt-0.5 truncate text-xs text-muted-foreground">
+                        {trilha?.nome} · {categoria?.nome} · {PUBLICOS[m.publico]}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Badge variant="secondary" className="rounded-full text-[10px] uppercase">
+                        {m.tipo}
+                      </Badge>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="size-7 rounded-full text-destructive hover:bg-destructive/10"
+                        onClick={() => setMaterialParaRemover({ id: m.id, titulo: m.titulo })}
+                        title="Excluir material"
+                      >
+                        <Trash2 className="size-3.5" aria-hidden="true" />
+                      </Button>
+                    </div>
                   </div>
-                  <Badge variant="secondary" className="rounded-full text-[10px] uppercase">
-                    {m.tipo}
-                  </Badge>
-                </div>
-              )
-            })}
+                )
+              })
+            )}
             <Button asChild variant="ghost" className="mt-1 self-start rounded-full">
-              <Link href="/admin/materiais">Ver todos os materiais</Link>
+              <Link href="/admin/materiais">Ver todos os materiais ({materiais.length})</Link>
             </Button>
           </CardContent>
         </Card>
@@ -127,6 +160,39 @@ export default function AdminPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* DIALOG DE CONFIRMAÇÃO DE REMOÇÃO */}
+      <Dialog open={Boolean(materialParaRemover)} onOpenChange={(open) => !open && setMaterialParaRemover(null)}>
+        <DialogContent className="glass-strong border sm:max-w-md rounded-3xl p-6">
+          <DialogHeader>
+            <DialogTitle className="font-serif text-2xl text-destructive flex items-center gap-2">
+              <AlertTriangle className="size-5" /> Excluir Material?
+            </DialogTitle>
+            <DialogDescription className="pt-2 text-sm leading-relaxed">
+              Tem certeza que deseja excluir o material <strong>"{materialParaRemover?.titulo}"</strong>?
+              Esta ação removerá o arquivo da biblioteca pedagógica e não poderá ser desfeita.
+            </DialogDescription>
+          </DialogHeader>
+
+          <DialogFooter className="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+            <Button
+              variant="outline"
+              className="rounded-full"
+              onClick={() => setMaterialParaRemover(null)}
+            >
+              Cancelar
+            </Button>
+            <Button
+              variant="destructive"
+              className="rounded-full gap-1.5"
+              onClick={confirmarRemocao}
+            >
+              <Trash2 className="size-4" />
+              Sim, Excluir Material
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   )
 }

@@ -2,12 +2,20 @@
 
 import Link from "next/link"
 import { useMemo, useState } from "react"
-import { PlusCircle, Search, Trash2 } from "lucide-react"
+import { AlertTriangle, PlusCircle, Search, Trash2 } from "lucide-react"
 import { toast } from "sonner"
 import { Breadcrumbs } from "@/components/app/breadcrumbs"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -20,6 +28,7 @@ export default function AdminMateriaisPage() {
   const [busca, setBusca] = useState("")
   const [trilha, setTrilha] = useState("todas")
   const [tipo, setTipo] = useState("todos")
+  const [materialParaRemover, setMaterialParaRemover] = useState<{ id: string; titulo: string } | null>(null)
 
   const filtrados = useMemo(() => {
     const termo = busca.trim().toLowerCase()
@@ -31,9 +40,11 @@ export default function AdminMateriaisPage() {
     })
   }, [materiais, busca, trilha, tipo])
 
-  function onRemover(id: string, titulo: string) {
-    removerMaterial(id)
-    toast.success("Material removido", { description: titulo })
+  function confirmarRemocao() {
+    if (!materialParaRemover) return
+    removerMaterial(materialParaRemover.id)
+    toast.success("Material excluído com sucesso", { description: materialParaRemover.titulo })
+    setMaterialParaRemover(null)
   }
 
   return (
@@ -159,7 +170,7 @@ export default function AdminMateriaisPage() {
                             variant="ghost"
                             size="icon"
                             className="rounded-full text-destructive hover:bg-destructive/10"
-                            onClick={() => onRemover(m.id, m.titulo)}
+                            onClick={() => setMaterialParaRemover({ id: m.id, titulo: m.titulo })}
                           >
                             <Trash2 className="size-4" aria-hidden="true" />
                             <span className="sr-only">Remover {m.titulo}</span>
@@ -178,6 +189,39 @@ export default function AdminMateriaisPage() {
           </p>
         </CardContent>
       </Card>
+
+      {/* DIALOG DE CONFIRMAÇÃO DE REMOÇÃO */}
+      <Dialog open={Boolean(materialParaRemover)} onOpenChange={(open) => !open && setMaterialParaRemover(null)}>
+        <DialogContent className="glass-strong border sm:max-w-md rounded-3xl p-6">
+          <DialogHeader>
+            <DialogTitle className="font-serif text-2xl text-destructive flex items-center gap-2">
+              <AlertTriangle className="size-5" /> Excluir Material?
+            </DialogTitle>
+            <DialogDescription className="pt-2 text-sm leading-relaxed">
+              Tem certeza que deseja excluir o material <strong>"{materialParaRemover?.titulo}"</strong>?
+              Esta ação removerá o arquivo da biblioteca pedagógica e não poderá ser desfeita.
+            </DialogDescription>
+          </DialogHeader>
+
+          <DialogFooter className="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+            <Button
+              variant="outline"
+              className="rounded-full"
+              onClick={() => setMaterialParaRemover(null)}
+            >
+              Cancelar
+            </Button>
+            <Button
+              variant="destructive"
+              className="rounded-full gap-1.5"
+              onClick={confirmarRemocao}
+            >
+              <Trash2 className="size-4" />
+              Sim, Excluir Material
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   )
 }

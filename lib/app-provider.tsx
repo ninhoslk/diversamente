@@ -46,6 +46,7 @@ const AppContext = createContext<AppContextValue | null>(null)
 const CHAVE_SESSAO = "diversamente:sessao"
 const CHAVE_USUARIOS = "diversamente:usuarios"
 const CHAVE_SITE_CONFIG = "diversamente:site-config"
+const CHAVE_MATERIAIS = "diversamente:materiais"
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
   const [usuario, setUsuario] = useState<Usuario | null>(null)
@@ -61,6 +62,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
       const usuariosSalvos = localStorage.getItem(CHAVE_USUARIOS)
       if (usuariosSalvos) setUsuarios(JSON.parse(usuariosSalvos))
+
+      const materiaisSalvos = localStorage.getItem(CHAVE_MATERIAIS)
+      if (materiaisSalvos) setMateriais(JSON.parse(materiaisSalvos))
     } catch {
       // ignora erros de parsing em ambiente de dev
     }
@@ -165,18 +169,30 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   )
 
   const adicionarMaterial = useCallback((material: Omit<Material, "id" | "criadoEm">) => {
-    setMateriais((anteriores) => [
-      {
-        ...material,
-        id: `m${Date.now()}`,
-        criadoEm: new Date().toISOString().slice(0, 10),
-      },
-      ...anteriores,
-    ])
+    setMateriais((anteriores) => {
+      const novaLista = [
+        {
+          ...material,
+          id: `m${Date.now()}`,
+          criadoEm: new Date().toISOString().slice(0, 10),
+        },
+        ...anteriores,
+      ]
+      try {
+        localStorage.setItem(CHAVE_MATERIAIS, JSON.stringify(novaLista))
+      } catch {}
+      return novaLista
+    })
   }, [])
 
   const removerMaterial = useCallback((id: string) => {
-    setMateriais((anteriores) => anteriores.filter((m) => m.id !== id))
+    setMateriais((anteriores) => {
+      const novaLista = anteriores.filter((m) => m.id !== id)
+      try {
+        localStorage.setItem(CHAVE_MATERIAIS, JSON.stringify(novaLista))
+      } catch {}
+      return novaLista
+    })
   }, [])
 
   const atualizarSiteConfig = useCallback((novaConfig: SiteConfig) => {
