@@ -30,11 +30,6 @@ export default function CategoriaPage({
   const categoria = getCategoria(trilhaSlug, categoriaSlug)
   if (!trilha || !categoria) notFound()
 
-  // Filtragem dos públicos permitidos com base no Papel do Usuário
-  // Regras pedidas:
-  // - Aluno só vê o material de aluno (e criança para ed. infantil)
-  // - Professor e Admin veem tudo (aluno/criança, educador e família)
-  // - Pais veem o material dos pais (família) e do aluno (aluno/criança)
   const publicosPermitidos = useMemo<PublicoSlug[]>(() => {
     const papel = usuario?.papel ?? "visitante"
     if (papel === "admin" || papel === "professor") {
@@ -57,7 +52,7 @@ export default function CategoriaPage({
   const publicoInicial = publicosPermitidos.length > 0 ? publicosPermitidos[0] : categoria.publicos[0]
 
   return (
-    <div>
+    <div className="pb-8">
       <Breadcrumbs
         itens={[
           { label: "Conteúdos", href: "/conteudos" },
@@ -67,27 +62,27 @@ export default function CategoriaPage({
       />
 
       <header className="flex flex-col gap-3">
-        <div className="flex items-center gap-2">
-          <h1 className="text-pretty text-3xl font-bold tracking-tight sm:text-4xl">{categoria.nome}</h1>
+        <div className="flex flex-wrap items-center gap-2">
+          <h1 className="text-pretty font-serif text-2xl font-bold tracking-tight sm:text-4xl">{categoria.nome}</h1>
           <Badge variant="outline" className="rounded-full text-xs font-normal">
             Visão: {usuario?.papel === "admin" ? "Administrador" : usuario?.papel === "professor" ? "Professor" : usuario?.papel === "pai" ? "Família" : "Estudante"}
           </Badge>
         </div>
-        <p className="max-w-2xl text-pretty leading-relaxed text-muted-foreground">
-          Escolha a aba de público liberada para o seu perfil e o formato do material que deseja acessar.
+        <p className="max-w-2xl text-pretty text-sm sm:text-base leading-relaxed text-muted-foreground">
+          Escolha a aba de público para acessar cadernos, vídeos e jogos formativos.
         </p>
       </header>
 
-      {/* Nível 3: sub-abas de público liberadas para a função logada */}
-      <Tabs defaultValue={publicoInicial} className="mt-8">
-        <TabsList className="glass h-auto flex-wrap justify-start gap-1 rounded-full border p-1.5">
+      {/* Nível 3: sub-abas de público com rolagem suave no celular */}
+      <Tabs defaultValue={publicoInicial} className="mt-6 sm:mt-8">
+        <TabsList className="glass h-auto max-w-full overflow-x-auto flex-nowrap sm:flex-wrap justify-start gap-1.5 rounded-2xl sm:rounded-full border p-1.5">
           {categoria.publicos.map((p) => {
             const estaLiberado = publicosPermitidos.includes(p)
             if (!estaLiberado) {
               return (
                 <div
                   key={p}
-                  className="flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-medium text-muted-foreground/50 cursor-not-allowed select-none bg-secondary/30"
+                  className="flex shrink-0 items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs sm:text-sm font-medium text-muted-foreground/50 cursor-not-allowed select-none bg-secondary/30"
                   title="Conteúdo exclusivo para outros perfis"
                 >
                   <Lock className="size-3.5" />
@@ -96,7 +91,7 @@ export default function CategoriaPage({
               )
             }
             return (
-              <TabsTrigger key={p} value={p} className="rounded-full px-4 py-2 text-sm">
+              <TabsTrigger key={p} value={p} className="shrink-0 rounded-full px-3.5 py-1.5 text-xs sm:text-sm">
                 {PUBLICOS[p]}
               </TabsTrigger>
             )
@@ -107,11 +102,11 @@ export default function CategoriaPage({
           <TabsContent key={publico} value={publico} className="mt-6">
             {/* Filtro por tipo de material */}
             <Tabs defaultValue="pdf">
-              <TabsList className="rounded-full bg-secondary/70">
+              <TabsList className="rounded-full bg-secondary/70 max-w-full overflow-x-auto flex-nowrap sm:flex-wrap">
                 {TIPOS.map((tipo) => {
                   const qtd = doGrupo.filter((m) => m.publico === publico && m.tipo === tipo.slug).length
                   return (
-                    <TabsTrigger key={tipo.slug} value={tipo.slug} className="gap-1.5 rounded-full">
+                    <TabsTrigger key={tipo.slug} value={tipo.slug} className="shrink-0 gap-1.5 rounded-full text-xs sm:text-sm">
                       {tipo.label}
                       <span className="text-xs text-muted-foreground">{qtd}</span>
                     </TabsTrigger>
@@ -126,7 +121,7 @@ export default function CategoriaPage({
                 return (
                   <TabsContent key={tipo.slug} value={tipo.slug} className="mt-6">
                     {lista.length === 0 ? (
-                      <div className="glass flex flex-col items-center gap-3 rounded-3xl border p-12 text-center">
+                      <div className="glass flex flex-col items-center gap-3 rounded-3xl border p-8 sm:p-12 text-center">
                         <Inbox className="size-8 text-muted-foreground" aria-hidden="true" />
                         <p className="text-sm text-muted-foreground">
                           Nenhum material deste tipo publicado para {PUBLICOS[publico].toLowerCase()} ainda.
@@ -145,7 +140,7 @@ export default function CategoriaPage({
                               className="w-full text-left"
                               aria-label={`Abrir ${material.titulo}`}
                             >
-                              <CardContent className="flex flex-col gap-3 p-6">
+                              <CardContent className="flex flex-col gap-3 p-5 sm:p-6">
                                 <div className="flex items-start justify-between gap-3">
                                   <span className="flex size-11 items-center justify-center rounded-2xl bg-primary/10">
                                     <Icone className="size-5 text-primary" aria-hidden="true" />
@@ -154,8 +149,8 @@ export default function CategoriaPage({
                                     {tipo.label.replace(/s$/, "")}
                                   </Badge>
                                 </div>
-                                <h2 className="text-pretty font-semibold leading-snug">{material.titulo}</h2>
-                                <p className="text-sm leading-relaxed text-muted-foreground">{material.descricao}</p>
+                                <h2 className="text-pretty font-semibold leading-snug text-base sm:text-lg">{material.titulo}</h2>
+                                <p className="text-xs sm:text-sm leading-relaxed text-muted-foreground">{material.descricao}</p>
                                 <span className="text-xs text-muted-foreground">
                                   Publicado em {formatarData(material.criadoEm)}
                                 </span>

@@ -1,14 +1,24 @@
 "use client"
 
 import { useCallback, useEffect, useRef, useState } from "react"
-import { ChevronLeft, ChevronRight, ExternalLink, FileWarning, Loader2, RefreshCw, ZoomIn, ZoomOut } from "lucide-react"
+import {
+  ChevronLeft,
+  ChevronRight,
+  ExternalLink,
+  FileWarning,
+  Loader2,
+  Maximize2,
+  Minimize2,
+  RefreshCw,
+  ZoomIn,
+  ZoomOut,
+} from "lucide-react"
 import { Button } from "@/components/ui/button"
 
 function formatarUrlPdf(urlOriginal: string): string {
   if (!urlOriginal) return ""
   let url = urlOriginal.trim()
 
-  // Converte links de visualizacao do Google Drive em links de preview incorporados
   if (url.includes("drive.google.com")) {
     const match = url.match(/\/file\/d\/([^\/]+)/) || url.match(/id=([^&]+)/)
     if (match && match[1]) {
@@ -23,18 +33,84 @@ export function PdfViewer({ url: urlProp, titulo }: { url: string; titulo: strin
   const url = formatarUrlPdf(urlProp)
   const isGoogleDrive = url.includes("drive.google.com")
 
+  const containerRef = useRef<HTMLDivElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const docRef = useRef<{ numPages: number; getPage: (n: number) => Promise<unknown> } | null>(null)
   const renderTaskRef = useRef<{ cancel: () => void } | null>(null)
 
+  // Gestos de Touch / Swipe em Celulares
+  const touchStartX = useRef<number | null>(null)
+  const touchStartY = useRef<number | null>(null)
+
   const [totalPaginas, setTotalPaginas] = useState(0)
   const [pagina, setPagina] = useState(1)
+  const [paginaInput, setPaginaInput] = useState("1")
   const [escala, setEscala] = useState(1.1)
   const [carregando, setCarregando] = useState(true)
   const [usarFallbackIframe, setUsarFallbackIframe] = useState(isGoogleDrive)
+  const [isFullScreen, setIsFullScreen] = useState(false)
   const [erro, setErro] = useState<string | null>(null)
 
-  // Tenta carregar via PDF.js se não for link direto do Google Drive/Iframe
+  // Sincroniza o input numérico com o estado da página
+  useEffect(() => {
+    setPaginaInput(String(pagina))
+  }, [pagina])
+
+  // Escuta alteração de Tela Cheia
+  useEffect(() => {
+    function onFullScreenChange() {
+      setIsFullScreen(Boolean(document.fullscreenElement))
+    }
+    document.addEventListener("fullscreenchange", onFullScreenChange)
+    return () => document.removeEventListener("fullscreenchange", onFullScreenChange)
+  }, [])
+
+  // Alterna o Modo Tela Cheia
+  const alternarTelaCheia = useCallback(() => {
+    if (!containerRef.current) return
+    if (!document.fullscreenElement) {
+      containerRef.current.requestFullscreen().catch(() => {})
+    } else {
+      document.exitFullscreen().catch(() => {})
+    }
+  }, [])
+
+  // Aplica o salto direto de página
+  const irParaPaginaDireta = useCallback(() => {
+    const num = parseInt(paginaInput, 10)
+    if (!isNaN(num) && num >= 1 && num <= totalPaginas) {
+      setPagina(num)
+    } else {
+      setPaginaInput(String(pagina))
+    }
+  }, [paginaInput, totalPaginas, pagina])
+
+  // Trata o deslize de dedo (Swipe) no celular
+  const onTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX
+    touchStartY.current = e.touches[0].clientY
+  }
+
+  const onTouchEnd = (e: React.TouchEvent) => {
+    if (touchStartX.current === null || touchStartY.current === null) return
+    const deltaX = e.changedTouches[0].clientX - touchStartX.current
+    const deltaY = e.changedTouches[0].clientY - touchStartY.current
+
+    // Garante que é um deslize predominantemente horizontal
+    if (Math.abs(deltaX) > 40 && Math.abs(deltaX) > Math.abs(deltaY)) {
+      if (deltaX < 0) {
+        // Deslizou para a esquerda -> Próxima página
+        setPagina((p) => Math.min(totalPaginas, p + 1))
+      } else {
+        // Deslizou para a direita -> Página anterior
+        setPagina((p) => Math.max(1, p - 1))
+      }
+    }
+    touchStartX.current = null
+    touchStartY.current = null
+  }
+
+  // Carrega o PDF via PDF.js
   useEffect(() => {
     let cancelado = false
 
@@ -45,7 +121,6 @@ export function PdfViewer({ url: urlProp, titulo }: { url: string; titulo: strin
         return
       }
 
-      // Se for Google Drive preview ou se já ativou fallback, usa Iframe direto
       if (isGoogleDrive) {
         setUsarFallbackIframe(true)
         setCarregando(false)
@@ -67,25 +142,21 @@ export function PdfViewer({ url: urlProp, titulo }: { url: string; titulo: strin
         setPagina(1)
         setUsarFallbackIframe(false)
       } catch (e) {
-        console.warn("PDF.js não pôde processar o arquivo diretamente, ativando leitor alternativo:", e)
-        if (!cancelado) {
-          // Ativa o leitor alternativo em iframe/Google Docs Viewer para evitar falha
-          setUsarFallbackIframe(true)
-        }
+        console.warn("PDF.js alternando para leitor embutido:", e)
+        if (!cancelado) setUsarFallbackIframe(true)
       } finally {
         if (!cancelado) setCarregando(false)
       }
     }
 
     carregarPdfJs()
-
     return () => {
       cancelado = true
       docRef.current = null
     }
   }, [url, isGoogleDrive])
 
-  // Renderiza a pagina no Canvas (quando usando PDF.js)
+  // Renderiza a página no Canvas
   const renderizarPagina = useCallback(async () => {
     const doc = docRef.current
     const canvas = canvasRef.current
@@ -116,7 +187,7 @@ export function PdfViewer({ url: urlProp, titulo }: { url: string; titulo: strin
       renderTaskRef.current = task
       await task.promise
     } catch {
-      // cancelamento normal de troca de pagina
+      // cancelamento normal
     }
   }, [pagina, escala, usarFallbackIframe])
 
@@ -150,15 +221,15 @@ export function PdfViewer({ url: urlProp, titulo }: { url: string; titulo: strin
     )
   }
 
-  // MODO 1: Leitor via Iframe (para Google Drive ou quando a estrutura do PDF exige visualizador nativo)
+  // MODO EMBEDDED / FALLBACK
   if (usarFallbackIframe) {
     const embedUrl = isGoogleDrive
       ? url
       : `https://docs.google.com/viewer?url=${encodeURIComponent(url)}&embedded=true`
 
     return (
-      <div className="flex flex-col gap-3">
-        <div className="relative aspect-[4/3] w-full min-h-[500px] overflow-hidden rounded-2xl border border-border bg-card shadow-xs">
+      <div ref={containerRef} className="flex flex-col gap-3 bg-background p-2 rounded-2xl">
+        <div className="relative aspect-[4/3] w-full min-h-[450px] sm:min-h-[600px] overflow-hidden rounded-2xl border border-border bg-card shadow-xs">
           <iframe
             src={embedUrl}
             title={`Leitor de PDF - ${titulo}`}
@@ -166,51 +237,75 @@ export function PdfViewer({ url: urlProp, titulo }: { url: string; titulo: strin
             allow="autoplay"
           />
         </div>
-        <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
-          <span>Visualizador seguro ativado.</span>
-          <a
-            href={url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-1 font-medium text-primary hover:underline"
-          >
-            Abrir arquivo completo <ExternalLink className="size-3" />
-          </a>
+        <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground px-2">
+          <span>Leitor seguro ativo.</span>
+          <Button variant="ghost" size="sm" onClick={alternarTelaCheia} className="rounded-full text-xs gap-1.5">
+            {isFullScreen ? <Minimize2 className="size-3.5" /> : <Maximize2 className="size-3.5" />}
+            {isFullScreen ? "Sair da Tela Cheia" : "Tela Cheia"}
+          </Button>
         </div>
       </div>
     )
   }
 
-  // MODO 2: Leitor via Canvas PDF.js (Sem downloads e protegido)
+  // MODO CANVAS PROTEGIDO (INTERATIVO PARA CELULARES, TABLETS E PC)
   return (
-    <div className="flex flex-col gap-4">
+    <div
+      ref={containerRef}
+      className={`flex flex-col gap-3 rounded-2xl bg-background ${
+        isFullScreen ? "fixed inset-0 z-50 overflow-y-auto p-4 sm:p-6" : ""
+      }`}
+    >
+      {/* AREA DO CANVAS COM SUPORTE A TOUCH SWIPE */}
       <div
         onContextMenu={(e) => e.preventDefault()}
         onDragStart={(e) => e.preventDefault()}
-        className="no-select overflow-auto rounded-2xl bg-secondary/40 p-3"
+        onTouchStart={onTouchStart}
+        onTouchEnd={onTouchEnd}
+        className="no-select touch-pan-y relative overflow-auto rounded-2xl bg-secondary/40 p-2 sm:p-4 text-center min-h-[350px] flex items-center justify-center"
       >
-        <canvas ref={canvasRef} aria-label={`Página ${pagina} de ${titulo}`} className="mx-auto rounded-xl shadow-sm" />
+        <canvas
+          ref={canvasRef}
+          aria-label={`Página ${pagina} de ${titulo}`}
+          className="mx-auto max-w-full rounded-xl shadow-sm transition-transform duration-200"
+        />
       </div>
 
-      <div className="flex flex-wrap items-center justify-between gap-3">
+      {/* BARRA DE CONTROLE INTERATIVA E RESPONSIVA */}
+      <div className="flex flex-wrap items-center justify-between gap-3 bg-card border border-border/80 rounded-2xl p-3 shadow-xs">
+        {/* NAVEGAÇÃO DE PÁGINAS + JUMP DIRETO */}
         <div className="flex items-center gap-2">
           <Button
             variant="outline"
             size="icon"
-            className="rounded-full bg-card/80"
+            className="size-9 rounded-full shrink-0"
             onClick={() => setPagina((p) => Math.max(1, p - 1))}
             disabled={pagina <= 1}
             aria-label="Página anterior"
           >
             <ChevronLeft className="size-4" />
           </Button>
-          <span className="min-w-24 text-center text-sm text-muted-foreground">
-            {pagina} / {totalPaginas}
-          </span>
+
+          {/* INPUT PARA IR DIRETO NA PÁGINA DESEJADA */}
+          <div className="flex items-center gap-1.5 rounded-full border border-border bg-background px-3 py-1 text-sm font-medium">
+            <input
+              type="number"
+              min={1}
+              max={totalPaginas}
+              value={paginaInput}
+              onChange={(e) => setPaginaInput(e.target.value)}
+              onBlur={irParaPaginaDireta}
+              onKeyDown={(e) => e.key === "Enter" && irParaPaginaDireta()}
+              aria-label="Número da página"
+              className="w-9 text-center font-bold text-foreground bg-transparent border-0 outline-none p-0 focus:ring-0"
+            />
+            <span className="text-xs text-muted-foreground font-normal">/ {totalPaginas}</span>
+          </div>
+
           <Button
             variant="outline"
             size="icon"
-            className="rounded-full bg-card/80"
+            className="size-9 rounded-full shrink-0"
             onClick={() => setPagina((p) => Math.min(totalPaginas, p + 1))}
             disabled={pagina >= totalPaginas}
             aria-label="Próxima página"
@@ -219,39 +314,56 @@ export function PdfViewer({ url: urlProp, titulo }: { url: string; titulo: strin
           </Button>
         </div>
 
-        <div className="flex items-center gap-2">
+        {/* CONTROLES DE ZOOM, TELA CHEIA E TIPO DE LEITOR */}
+        <div className="flex flex-wrap items-center gap-1.5">
           <Button
             variant="outline"
             size="icon"
-            className="rounded-full bg-card/80"
+            className="size-9 rounded-full"
             onClick={() => setEscala((s) => Math.max(0.6, Number((s - 0.2).toFixed(1))))}
             aria-label="Diminuir zoom"
+            title="Diminuir zoom"
           >
             <ZoomOut className="size-4" />
           </Button>
+
           <Button
             variant="outline"
             size="icon"
-            className="rounded-full bg-card/80"
-            onClick={() => setEscala((s) => Math.min(2.4, Number((s + 0.2).toFixed(1))))}
+            className="size-9 rounded-full"
+            onClick={() => setEscala((s) => Math.min(2.5, Number((s + 0.2).toFixed(1))))}
             aria-label="Aumentar zoom"
+            title="Aumentar zoom"
           >
             <ZoomIn className="size-4" />
           </Button>
+
+          {/* BOTAO TELA CHEIA */}
           <Button
             variant="outline"
             size="sm"
-            className="rounded-full bg-card/80 text-xs"
-            onClick={() => setUsarFallbackIframe(true)}
-            title="Alternar para o leitor em modo tela cheia/embed"
+            className="rounded-full gap-1.5 text-xs font-medium px-3 h-9"
+            onClick={alternarTelaCheia}
+            title={isFullScreen ? "Sair da Tela Cheia" : "Modo Tela Cheia"}
           >
-            <RefreshCw className="size-3.5" /> Alternar leitor
+            {isFullScreen ? <Minimize2 className="size-4 text-primary" /> : <Maximize2 className="size-4 text-primary" />}
+            <span className="hidden sm:inline">{isFullScreen ? "Sair da Tela Cheia" : "Tela Cheia"}</span>
+          </Button>
+
+          <Button
+            variant="ghost"
+            size="icon"
+            className="size-9 rounded-full text-muted-foreground"
+            onClick={() => setUsarFallbackIframe(true)}
+            title="Alternar modo de leitura"
+          >
+            <RefreshCw className="size-4" />
           </Button>
         </div>
       </div>
 
-      <p className="text-xs text-muted-foreground">
-        Material pedagógico exclusivo — visualização protegida na plataforma.
+      <p className="text-[11px] text-center text-muted-foreground">
+        💡 <strong>Dica mobile:</strong> Deslize o dedo para os lados para trocar de página ou digite o número da página no campo.
       </p>
     </div>
   )
