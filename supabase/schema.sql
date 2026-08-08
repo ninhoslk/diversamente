@@ -118,10 +118,49 @@ DROP POLICY IF EXISTS "Insercao de materiais" ON public.materials;
 DROP POLICY IF EXISTS "materials_select" ON public.materials;
 DROP POLICY IF EXISTS "materials_write" ON public.materials;
 
--- Só usuários autenticados (logados) podem listar materiais.
--- (o filtro fino por papel/público continua sendo aplicado na consulta do app)
+-- Confere, para o usuário autenticado atual, se ele pode ver uma linha de
+-- materials com o (trilha, categoria, publico) informados. Espelha em SQL a
+-- mesma regra usada em lib/catalog.ts (usuarioPodeAcessarCategoria +
+-- publicosPermitidosParaPapel) e já aplicada na rota de URL assinada de PDF
+-- (app/api/materiais/[id]/pdf-url/route.ts), agora também no nível de RLS —
+-- assim a restrição vale para QUALQUER consulta à tabela (inclusive a
+-- consulta direta feita pelo cliente em lib/app-provider.tsx), não só para a
+-- UI. SECURITY DEFINER evita recursão de RLS ao ler profiles.
+CREATE OR REPLACE FUNCTION public.usuario_pode_ver_material(p_trilha TEXT, p_categoria TEXT, p_publico TEXT)
+RETURNS boolean
+LANGUAGE sql
+SECURITY DEFINER
+SET search_path = public
+STABLE
+AS $$
+  SELECT EXISTS (
+    SELECT 1
+    FROM public.profiles p
+    WHERE p.id = auth.uid()
+      AND (
+        p.papel = 'admin'
+        OR (
+          p.papel IN ('professor', 'aluno', 'pai')
+          -- restrição de turma/ano: "todas" (ou vazio) libera tudo; senão precisa
+          -- bater com a trilha inteira ou a categoria (ano/turma) específica
+          AND (p.categoria_id IS NULL OR p.categoria_id = 'todas' OR p.categoria_id = p_trilha OR p.categoria_id = p_categoria)
+          AND (
+            p.papel = 'professor'
+            OR (p.papel = 'aluno' AND p_publico IN ('aluno', 'crianca'))
+            OR (p.papel = 'pai' AND p_publico IN ('familia', 'aluno', 'crianca'))
+          )
+        )
+      )
+  );
+$$;
+
+-- Só usuários autenticados que têm permissão de papel + turma/ano para aquele
+-- material específico podem lê-lo. Antes, qualquer autenticado lia a tabela
+-- inteira (o filtro por turma/ano só existia na UI) — um aluno restrito a uma
+-- turma conseguia ver metadados e URLs de vídeo/jogo de qualquer outra turma
+-- consultando a tabela "materials" diretamente pelo cliente Supabase.
 CREATE POLICY "materials_select" ON public.materials
-  FOR SELECT USING (auth.role() = 'authenticated');
+  FOR SELECT USING (public.usuario_pode_ver_material(trilha, categoria, publico));
 
 -- Só admin pode criar, editar ou apagar materiais.
 CREATE POLICY "materials_write" ON public.materials

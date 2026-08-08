@@ -112,11 +112,11 @@ export const CATEGORIAS: Categoria[] = [
 
   // Trilha de Educação Ambiental — categorias com slugs próprios (prefixo "amb-") para
   // não colidir com as categorias de mesmo ano da trilha Fundamental I.
-  { slug: "amb-1-ano", nome: "1º Ano", trilha: "educacao-ambiental", publicos: ["aluno", "educador", "familia"] },
-  { slug: "amb-2-ano", nome: "2º Ano", trilha: "educacao-ambiental", publicos: ["aluno", "educador", "familia"] },
-  { slug: "amb-3-ano", nome: "3º Ano", trilha: "educacao-ambiental", publicos: ["aluno", "educador", "familia"] },
-  { slug: "amb-4-ano", nome: "4º Ano", trilha: "educacao-ambiental", publicos: ["aluno", "educador", "familia"] },
-  { slug: "amb-5-ano", nome: "5º Ano", trilha: "educacao-ambiental", publicos: ["aluno", "educador", "familia"] },
+  { slug: "amb-1-ano", nome: "1º Ano", trilha: "educacao-ambiental", publicos: ["aluno", "educador"] },
+  { slug: "amb-2-ano", nome: "2º Ano", trilha: "educacao-ambiental", publicos: ["aluno", "educador"] },
+  { slug: "amb-3-ano", nome: "3º Ano", trilha: "educacao-ambiental", publicos: ["aluno", "educador"] },
+  { slug: "amb-4-ano", nome: "4º Ano", trilha: "educacao-ambiental", publicos: ["aluno", "educador"] },
+  { slug: "amb-5-ano", nome: "5º Ano", trilha: "educacao-ambiental", publicos: ["aluno", "educador"] },
 ]
 
 export const TIPOS: { slug: TipoMaterial; label: string }[] = [
