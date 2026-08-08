@@ -29,8 +29,51 @@ function formatarUrlPdf(urlOriginal: string): string {
   return url
 }
 
-export function PdfViewer({ url: urlProp, titulo }: { url: string; titulo: string }) {
-  const url = formatarUrlPdf(urlProp)
+export function PdfViewer({
+  materialId,
+  url: urlProp,
+  storagePath,
+  titulo,
+}: {
+  materialId: string
+  url: string
+  storagePath?: string | null
+  titulo: string
+}) {
+  const [urlResolvida, setUrlResolvida] = useState<string | null>(storagePath ? null : urlProp)
+  const [erroResolucao, setErroResolucao] = useState<string | null>(null)
+
+  // Quando o PDF vem do Storage privado, busca uma URL assinada de curta duração
+  // no servidor (que também confere se este usuário pode ver este material).
+  useEffect(() => {
+    let cancelado = false
+    if (!storagePath) {
+      setUrlResolvida(urlProp)
+      return
+    }
+
+    async function buscarUrlAssinada() {
+      try {
+        const res = await fetch(`/api/materiais/${materialId}/pdf-url`)
+        const data = await res.json()
+        if (cancelado) return
+        if (!res.ok || !data.url) {
+          setErroResolucao(data.erro ?? "Não foi possível carregar este PDF.")
+          return
+        }
+        setUrlResolvida(data.url)
+      } catch {
+        if (!cancelado) setErroResolucao("Não foi possível carregar este PDF.")
+      }
+    }
+
+    buscarUrlAssinada()
+    return () => {
+      cancelado = true
+    }
+  }, [materialId, storagePath, urlProp])
+
+  const url = formatarUrlPdf(urlResolvida ?? "")
   const isGoogleDrive = url.includes("drive.google.com")
 
   const containerRef = useRef<HTMLDivElement>(null)
@@ -41,6 +84,9 @@ export function PdfViewer({ url: urlProp, titulo }: { url: string; titulo: strin
   // Gestos de Touch / Swipe em Celulares
   const touchStartX = useRef<number | null>(null)
   const touchStartY = useRef<number | null>(null)
+
+  // Trava de debounce para o scroll do mouse (evita pular várias páginas de uma vez)
+  const wheelLockRef = useRef(false)
 
   const [totalPaginas, setTotalPaginas] = useState(0)
   const [pagina, setPagina] = useState(1)
@@ -111,13 +157,35 @@ export function PdfViewer({ url: urlProp, titulo }: { url: string; titulo: strin
     touchStartY.current = null
   }
 
+  // Navega entre páginas usando o scroll do mouse (roda para baixo = próxima página)
+  const onWheelPagina = useCallback(
+    (e: React.WheelEvent) => {
+      if (usarFallbackIframe || totalPaginas <= 1) return
+      if (Math.abs(e.deltaY) < 12) return
+      e.preventDefault()
+      if (wheelLockRef.current) return
+      wheelLockRef.current = true
+      if (e.deltaY > 0) {
+        setPagina((p) => Math.min(totalPaginas, p + 1))
+      } else {
+        setPagina((p) => Math.max(1, p - 1))
+      }
+      window.setTimeout(() => {
+        wheelLockRef.current = false
+      }, 450)
+    },
+    [usarFallbackIframe, totalPaginas],
+  )
+
   // Carrega o PDF via PDF.js
   useEffect(() => {
     let cancelado = false
 
     async function carregarPdfJs() {
       if (!url) {
-        setErro("Este material ainda não possui um arquivo válido cadastrado.")
+        // Enquanto a URL assinada do Storage ainda está sendo buscada, mantém o loading.
+        if (storagePath && !erroResolucao) return
+        setErro(erroResolucao ?? "Este material ainda não possui um arquivo válido cadastrado.")
         setCarregando(false)
         return
       }
@@ -155,7 +223,7 @@ export function PdfViewer({ url: urlProp, titulo }: { url: string; titulo: strin
       cancelado = true
       docRef.current = null
     }
-  }, [url, isGoogleDrive])
+  }, [url, isGoogleDrive, storagePath, erroResolucao])
 
   // Renderiza a página no Canvas
   const renderizarPagina = useCallback(async () => {
@@ -237,6 +305,7 @@ export function PdfViewer({ url: urlProp, titulo }: { url: string; titulo: strin
           onDragStart={(e) => e.preventDefault()}
           onTouchStart={onTouchStart}
           onTouchEnd={onTouchEnd}
+          onWheel={onWheelPagina}
           className="relative flex-1 w-full h-full flex items-center justify-center overflow-auto p-1 sm:p-3"
         >
           {usarFallbackIframe ? (
@@ -349,6 +418,7 @@ export function PdfViewer({ url: urlProp, titulo }: { url: string; titulo: strin
         onDragStart={(e) => e.preventDefault()}
         onTouchStart={onTouchStart}
         onTouchEnd={onTouchEnd}
+        onWheel={onWheelPagina}
         className="no-select touch-pan-y relative overflow-auto rounded-2xl bg-secondary/40 p-2 sm:p-4 text-center min-h-[350px] flex items-center justify-center"
       >
         <canvas

@@ -1,7 +1,7 @@
 "use client"
 
-import { useState } from "react"
-import { PlusCircle, Search, Trash2, Users, Shield, GraduationCap, UserRound, Sparkles } from "lucide-react"
+import { useEffect, useState } from "react"
+import { Eye, EyeOff, PlusCircle, Search, Trash2, Users, Shield, GraduationCap, UserRound, Sparkles } from "lucide-react"
 import { toast } from "sonner"
 import { Breadcrumbs } from "@/components/app/breadcrumbs"
 import { Badge } from "@/components/ui/badge"
@@ -15,21 +15,28 @@ import { CATEGORIAS, TRILHAS } from "@/lib/catalog"
 import { useApp, type Papel } from "@/lib/app-provider"
 
 export default function AdminUsuariosPage() {
-  const { usuarios, cadastrarUsuarioPeloAdmin, removerUsuarioPeloAdmin } = useApp()
+  const { usuarios, carregarUsuarios, cadastrarUsuarioPeloAdmin, removerUsuarioPeloAdmin } = useApp()
   const [busca, setBusca] = useState("")
+  const [enviando, setEnviando] = useState(false)
 
   // Form de criação
   const [nome, setNome] = useState("")
   const [email, setEmail] = useState("")
   const [senha, setSenha] = useState("")
+  const [mostrarSenha, setMostrarSenha] = useState(false)
   const [papel, setPapel] = useState<Papel>("aluno")
   const [categoriaId, setCategoriaId] = useState("fundamental-1")
   const [erro, setErro] = useState<string | null>(null)
+
+  useEffect(() => {
+    carregarUsuarios()
+  }, [carregarUsuarios])
 
   const CATEGORIAS_OPCOES = [
     { id: "todas", nome: "Todas as salas / anos (Acesso total)" },
     { id: "educacao-infantil", nome: "Educação Infantil (Berçário, Maternal, Pré-alfabetização)" },
     { id: "fundamental-1", nome: "Ensino Fundamental I (1º ao 5º ano)" },
+    { id: "educacao-ambiental", nome: "Educação Ambiental (1º ao 5º ano)" },
     ...CATEGORIAS.map((c) => ({ id: c.slug, nome: `Apenas: ${c.nome}` })),
   ]
 
@@ -40,7 +47,7 @@ export default function AdminUsuariosPage() {
       u.papel.toLowerCase().includes(busca.toLowerCase()),
   )
 
-  function onCadastrar(e: React.FormEvent) {
+  async function onCadastrar(e: React.FormEvent) {
     e.preventDefault()
     setErro(null)
 
@@ -49,7 +56,8 @@ export default function AdminUsuariosPage() {
     if (!senha.trim() || senha.length < 6) return setErro("A senha deve ter no mínimo 6 caracteres.")
 
     const catObj = CATEGORIAS_OPCOES.find((c) => c.id === categoriaId)
-    const resultado = cadastrarUsuarioPeloAdmin({
+    setEnviando(true)
+    const resultado = await cadastrarUsuarioPeloAdmin({
       nome: nome.trim(),
       email: email.trim(),
       senha: senha.trim(),
@@ -57,6 +65,7 @@ export default function AdminUsuariosPage() {
       categoriaId: papel === "admin" || papel === "professor" ? "todas" : categoriaId,
       categoriaNome: papel === "admin" || papel === "professor" ? "Todas as salas / anos" : catObj?.nome ?? "Geral",
     })
+    setEnviando(false)
 
     if (!resultado.ok) {
       setErro(resultado.erro ?? "Erro ao cadastrar usuário.")
@@ -69,12 +78,16 @@ export default function AdminUsuariosPage() {
     setSenha("")
   }
 
-  function onRemover(id: string, nomeUser: string) {
+  async function onRemover(id: string, nomeUser: string) {
     if (usuarios.length <= 1) {
       toast.error("Não é possível excluir o único usuário do sistema.")
       return
     }
-    removerUsuarioPeloAdmin(id)
+    const resultado = await removerUsuarioPeloAdmin(id)
+    if (!resultado.ok) {
+      toast.error(resultado.erro ?? "Não foi possível remover o usuário.")
+      return
+    }
     toast.success("Usuário removido.", { description: nomeUser })
   }
 
@@ -217,21 +230,32 @@ export default function AdminUsuariosPage() {
 
               <div className="flex flex-col gap-2">
                 <Label htmlFor="u-senha">Senha Provisória</Label>
-                <Input
-                  id="u-senha"
-                  type="password"
-                  value={senha}
-                  onChange={(e) => setSenha(e.target.value)}
-                  placeholder="Mínimo 6 caracteres"
-                  className="rounded-xl bg-card"
-                />
+                <div className="relative">
+                  <Input
+                    id="u-senha"
+                    type={mostrarSenha ? "text" : "password"}
+                    value={senha}
+                    onChange={(e) => setSenha(e.target.value)}
+                    placeholder="Mínimo 6 caracteres"
+                    className="rounded-xl bg-card pr-10"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setMostrarSenha((v) => !v)}
+                    aria-label={mostrarSenha ? "Ocultar senha" : "Mostrar senha"}
+                    title={mostrarSenha ? "Ocultar senha" : "Mostrar senha"}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    {mostrarSenha ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                  </button>
+                </div>
               </div>
 
               <div className="flex flex-col gap-2">
                 <Label htmlFor="u-papel">Função / Categoria de Login</Label>
-                <Select value={papel} onValueChange={(v) => setPapel(v as Papel)}>
+                <Select value={papel} onValueChange={(v) => setPapel((v as Papel) ?? "aluno")}>
                   <SelectTrigger id="u-papel" className="rounded-xl bg-card">
-                    <SelectValue />
+                    <SelectValue>{(v: Papel) => rotuloPapel[v] ?? v}</SelectValue>
                   </SelectTrigger>
                   <SelectContent className="rounded-2xl">
                     <SelectItem value="aluno">Estudante (Vê apenas a categoria designada)</SelectItem>
@@ -247,9 +271,9 @@ export default function AdminUsuariosPage() {
                   <Label htmlFor="u-categoria" className="text-xs font-semibold text-primary">
                     Restringir Acesso à Categoria:
                   </Label>
-                  <Select value={categoriaId} onValueChange={setCategoriaId}>
+                  <Select value={categoriaId} onValueChange={(v) => setCategoriaId(v ?? "fundamental-1")}>
                     <SelectTrigger id="u-categoria" className="rounded-xl bg-card text-xs">
-                      <SelectValue />
+                      <SelectValue>{(v: string) => CATEGORIAS_OPCOES.find((c) => c.id === v)?.nome ?? v}</SelectValue>
                     </SelectTrigger>
                     <SelectContent className="rounded-2xl">
                       {CATEGORIAS_OPCOES.map((c) => (
@@ -271,9 +295,9 @@ export default function AdminUsuariosPage() {
                 </p>
               ) : null}
 
-              <Button type="submit" size="lg" className="rounded-full mt-2">
+              <Button type="submit" size="lg" disabled={enviando} className="rounded-full mt-2">
                 <PlusCircle className="size-4" aria-hidden="true" />
-                Cadastrar Usuário
+                {enviando ? "Cadastrando..." : "Cadastrar Usuário"}
               </Button>
             </form>
           </CardContent>

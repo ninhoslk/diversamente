@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import fs from "fs"
 import path from "path"
 import { CONFIG_PADRAO_SITE, type SiteConfig } from "@/lib/site-config"
+import { getUsuarioAtual } from "@/lib/supabase/server"
 
 const DATA_DIR = path.join(process.cwd(), "data")
 const FILE_PATH = path.join(DATA_DIR, "site-config.json")
@@ -31,6 +32,11 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  const usuario = await getUsuarioAtual()
+  if (!usuario || usuario.papel !== "admin") {
+    return NextResponse.json({ ok: false, error: "Acesso restrito a administradores." }, { status: 403 })
+  }
+
   try {
     const body = (await request.json()) as SiteConfig
     saveStoredConfig(body)

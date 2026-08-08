@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
-import { Loader2, ShieldCheck, UserRound, GraduationCap, Users } from "lucide-react"
+import { Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -27,28 +27,22 @@ export function AuthDialog({
   const [enviando, setEnviando] = useState(false)
   const [email, setEmail] = useState("")
   const [senha, setSenha] = useState("")
-  const { entrar, usuarios } = useApp()
+  const { entrar } = useApp()
   const router = useRouter()
 
-  function onEntrar(e: React.FormEvent) {
+  async function onEntrar(e: React.FormEvent) {
     e.preventDefault()
     setEnviando(true)
-    const resultado = entrar(email, senha)
+    const resultado = await entrar(email, senha)
+    setEnviando(false)
     if (!resultado.ok) {
-      setEnviando(false)
       toast.error(resultado.erro ?? "Não foi possível entrar.")
       return
     }
-    const conta = usuarios.find((c) => c.email.toLowerCase() === email.trim().toLowerCase())
     setAberto(false)
-    setEnviando(false)
     toast.success("Bem-vindo à Diversamente!")
-    router.push(conta?.papel === "admin" ? "/admin" : "/conteudos")
-  }
-
-  function preencher(emailConta: string, senhaConta: string) {
-    setEmail(emailConta)
-    setSenha(senhaConta)
+    router.push("/conteudos")
+    router.refresh()
   }
 
   return (
@@ -95,52 +89,6 @@ export function AuthDialog({
               Entrar na Plataforma
             </Button>
           </form>
-
-          <div className="mt-5 rounded-2xl border bg-card/60 p-3">
-            <p className="text-xs font-medium text-muted-foreground mb-2">Contas de teste para demonstração:</p>
-            <div className="flex flex-col gap-1.5">
-              <button
-                type="button"
-                onClick={() => preencher("admin@diversamente.com", "admin123")}
-                className="flex items-center gap-2 rounded-xl px-2.5 py-1.5 text-left text-xs transition-colors hover:bg-secondary"
-              >
-                <ShieldCheck className="size-4 text-primary shrink-0" aria-hidden="true" />
-                <span>
-                  <strong>Admin:</strong> admin@diversamente.com
-                </span>
-              </button>
-              <button
-                type="button"
-                onClick={() => preencher("prof@diversamente.com", "prof123")}
-                className="flex items-center gap-2 rounded-xl px-2.5 py-1.5 text-left text-xs transition-colors hover:bg-secondary"
-              >
-                <GraduationCap className="size-4 text-primary shrink-0" aria-hidden="true" />
-                <span>
-                  <strong>Professor:</strong> prof@diversamente.com
-                </span>
-              </button>
-              <button
-                type="button"
-                onClick={() => preencher("aluno@diversamente.com", "aluno123")}
-                className="flex items-center gap-2 rounded-xl px-2.5 py-1.5 text-left text-xs transition-colors hover:bg-secondary"
-              >
-                <UserRound className="size-4 text-primary shrink-0" aria-hidden="true" />
-                <span>
-                  <strong>Estudante (Fundamental):</strong> aluno@diversamente.com
-                </span>
-              </button>
-              <button
-                type="button"
-                onClick={() => preencher("pai@diversamente.com", "pai123")}
-                className="flex items-center gap-2 rounded-xl px-2.5 py-1.5 text-left text-xs transition-colors hover:bg-secondary"
-              >
-                <Users className="size-4 text-primary shrink-0" aria-hidden="true" />
-                <span>
-                  <strong>Família (Fundamental):</strong> pai@diversamente.com
-                </span>
-              </button>
-            </div>
-          </div>
         </DialogContent>
       </Dialog>
     </>

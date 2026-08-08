@@ -36,9 +36,13 @@ export default function AdminPage() {
 
   const recentes = [...materiais].sort((a, b) => b.criadoEm.localeCompare(a.criadoEm)).slice(0, 5)
 
-  function confirmarRemocao() {
+  async function confirmarRemocao() {
     if (!materialParaRemover) return
-    removerMaterial(materialParaRemover.id)
+    const resultado = await removerMaterial(materialParaRemover.id)
+    if (!resultado.ok) {
+      toast.error(resultado.erro ?? "Não foi possível excluir o material.")
+      return
+    }
     toast.success("Material excluído com sucesso", { description: materialParaRemover.titulo })
     setMaterialParaRemover(null)
   }

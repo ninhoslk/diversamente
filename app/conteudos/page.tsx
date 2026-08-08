@@ -20,6 +20,7 @@ export default function ConteudosPage() {
     if (ehAdminOuProf || catUser === "todas") return true
     if (catUser === "educacao-infantil") return trilha.slug === "educacao-infantil"
     if (catUser === "fundamental-1") return trilha.slug === "fundamental-1"
+    if (catUser === "educacao-ambiental") return trilha.slug === "educacao-ambiental"
     const categoriasDaTrilha = getCategorias(trilha.slug)
     return categoriasDaTrilha.some((c) => c.slug === catUser)
   })
@@ -49,8 +50,13 @@ export default function ConteudosPage() {
           return (
             <Card
               key={trilha.slug}
-              className={`group overflow-hidden rounded-4xl border-0 bg-gradient-to-br ${trilha.gradient} p-[2px] shadow-sm transition-transform hover:-translate-y-1`}
+              className={`group relative overflow-hidden rounded-4xl border-0 bg-gradient-to-br ${trilha.gradient} p-[2px] shadow-sm transition-transform hover:-translate-y-1`}
             >
+              {trilha.badge ? (
+                <span className="absolute right-4 top-4 z-10 rounded-full bg-white/90 px-3 py-1 text-xs font-semibold text-emerald-700 shadow-sm dark:bg-black/70 dark:text-emerald-300">
+                  {trilha.badge}
+                </span>
+              ) : null}
               <Link
                 href={`/conteudos/${trilha.slug}`}
                 className="flex h-full flex-col gap-6 rounded-4xl bg-card/85 p-7 backdrop-blur-sm"

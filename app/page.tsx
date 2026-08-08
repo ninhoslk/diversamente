@@ -101,8 +101,13 @@ export default function HomePage() {
             {TRILHAS.map((trilha) => (
               <Card
                 key={trilha.slug}
-                className={`overflow-hidden rounded-3xl border-0 bg-gradient-to-br ${trilha.gradient} p-[2px] shadow-sm`}
+                className={`relative overflow-hidden rounded-3xl border-0 bg-gradient-to-br ${trilha.gradient} p-[2px] shadow-sm`}
               >
+                {trilha.badge ? (
+                  <span className="absolute right-4 top-4 z-10 rounded-full bg-white/90 px-3 py-1 text-xs font-semibold text-emerald-700 shadow-sm dark:bg-black/70 dark:text-emerald-300">
+                    {trilha.badge}
+                  </span>
+                ) : null}
                 <div className="flex h-full flex-col justify-between gap-6 rounded-3xl bg-card/85 p-7 backdrop-blur-sm">
                   <div className="flex flex-col gap-3">
                     <h3 className="text-2xl font-semibold">{trilha.nome}</h3>

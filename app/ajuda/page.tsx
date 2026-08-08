@@ -57,13 +57,13 @@ export default function AjudaPage() {
           <Card className="glass-strong rounded-3xl border shadow-sm">
             <CardContent className="flex flex-col items-center gap-4 p-6 text-center">
               <Button asChild size="lg" className="w-full justify-center text-center rounded-full">
-                <a href="https://wa.me/5511999999999" target="_blank" rel="noopener noreferrer" className="flex items-center justify-center gap-2">
+                <a href="https://wa.me/5519992101212" target="_blank" rel="noopener noreferrer" className="flex items-center justify-center gap-2">
                   <MessageCircle className="size-4 shrink-0" aria-hidden="true" />
                   <span>Conversar no WhatsApp</span>
                 </a>
               </Button>
               <Button asChild size="lg" variant="outline" className="w-full justify-center text-center rounded-full bg-card/80">
-                <a href="mailto:contato@diversamente.com" className="flex items-center justify-center gap-2">
+                <a href="mailto:ecosbioambiental@gmail.com" className="flex items-center justify-center gap-2">
                   <Mail className="size-4 shrink-0" aria-hidden="true" />
                   <span>Enviar um e-mail</span>
                 </a>

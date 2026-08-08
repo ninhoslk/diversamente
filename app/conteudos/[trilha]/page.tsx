@@ -3,21 +3,22 @@
 import { use } from "react"
 import Link from "next/link"
 import { notFound } from "next/navigation"
-import { ArrowRight, Folder } from "lucide-react"
+import { ArrowRight, Folder, Lock } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
 import { Breadcrumbs } from "@/components/app/breadcrumbs"
-import { getCategorias, getTrilha, PUBLICOS } from "@/lib/catalog"
+import { getCategorias, getTrilha, PUBLICOS, usuarioPodeAcessarCategoria } from "@/lib/catalog"
 import { useApp } from "@/lib/app-provider"
 
 export default function TrilhaPage({ params }: { params: Promise<{ trilha: string }> }) {
   const { trilha: trilhaSlug } = use(params)
-  const { materiais } = useApp()
+  const { materiais, usuario } = useApp()
 
   const trilha = getTrilha(trilhaSlug)
   if (!trilha) notFound()
 
   const categorias = getCategorias(trilhaSlug)
+  const podeVerTudo = usuario?.papel === "admin" || usuario?.papel === "professor"
 
   return (
     <div>
@@ -30,6 +31,32 @@ export default function TrilhaPage({ params }: { params: Promise<{ trilha: strin
 
       <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
         {categorias.map((categoria) => {
+          const liberada = podeVerTudo || usuarioPodeAcessarCategoria(usuario?.categoriaId, trilhaSlug, categoria.slug)
+
+          // Categoria fora da turma do usuário: nem a contagem de materiais é exibida,
+          // para não vazar nenhuma informação sobre o que existe lá dentro.
+          if (!liberada) {
+            return (
+              <Card
+                key={categoria.slug}
+                className="rounded-3xl border border-dashed p-0 opacity-60 shadow-none"
+                aria-disabled="true"
+              >
+                <CardContent className="flex flex-col gap-4 p-6">
+                  <div className="flex items-start justify-between gap-3">
+                    <span className="flex size-11 items-center justify-center rounded-2xl bg-muted">
+                      <Lock className="size-5 text-muted-foreground" aria-hidden="true" />
+                    </span>
+                  </div>
+
+                  <h2 className="text-xl font-semibold text-muted-foreground">{categoria.nome}</h2>
+
+                  <span className="text-sm text-muted-foreground">Fora da sua turma</span>
+                </CardContent>
+              </Card>
+            )
+          }
+
           const total = materiais.filter((m) => m.trilha === trilhaSlug && m.categoria === categoria.slug).length
 
           return (

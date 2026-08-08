@@ -66,7 +66,7 @@ export default function MentoriaPage() {
                   ))}
                 </ul>
                 <Button asChild className="mt-auto w-full rounded-full" variant={plano.destaque ? "default" : "outline"}>
-                  <a href="https://wa.me/5511999999999" target="_blank" rel="noopener noreferrer">
+                  <a href="https://wa.me/5519992101212" target="_blank" rel="noopener noreferrer">
                     Falar com a equipe
                   </a>
                 </Button>

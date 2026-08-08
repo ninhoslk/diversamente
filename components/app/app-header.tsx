@@ -4,7 +4,7 @@ import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { usePathname } from "next/navigation"
 import Link from "next/link"
-import { LayoutDashboard, LibraryBig, LogOut, User, Users, Palette } from "lucide-react"
+import { Home, LayoutDashboard, LibraryBig, LogOut, MessageSquareHeart, User, Users, Palette } from "lucide-react"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -41,9 +41,10 @@ export function AppHeader() {
     .join("")
     .toUpperCase()
 
-  function onSair() {
-    sair()
+  async function onSair() {
+    await sair()
     router.push("/")
+    router.refresh()
   }
 
   const rotuloPapel: Record<string, string> = {
@@ -62,6 +63,18 @@ export function AppHeader() {
             <Logo href="/conteudos" size="sm" />
             <nav aria-label="Navegação da plataforma" className="hidden items-center gap-1 sm:flex">
               <Link
+                href="/"
+                className={cn(
+                  "inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition-colors",
+                  pathname === "/"
+                    ? "bg-card text-foreground shadow-sm"
+                    : "text-foreground/70 hover:bg-card/60",
+                )}
+              >
+                <Home className="size-4" aria-hidden="true" />
+                Início
+              </Link>
+              <Link
                 href="/conteudos"
                 className={cn(
                   "inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition-colors",
@@ -72,6 +85,18 @@ export function AppHeader() {
               >
                 <LibraryBig className="size-4" aria-hidden="true" />
                 Conteúdos
+              </Link>
+              <Link
+                href="/mural"
+                className={cn(
+                  "inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition-colors",
+                  pathname === "/mural"
+                    ? "bg-card text-foreground shadow-sm"
+                    : "text-foreground/70 hover:bg-card/60",
+                )}
+              >
+                <MessageSquareHeart className="size-4" aria-hidden="true" />
+                Mural
               </Link>
               {usuario?.papel === "admin" ? (
                 <>

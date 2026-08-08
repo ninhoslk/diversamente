@@ -28,6 +28,9 @@ export function SiteFooter() {
             <Link href="/mentoria" className="transition-colors hover:text-foreground">
               Mentoria
             </Link>
+            <Link href="/mural" className="transition-colors hover:text-foreground">
+              Mural
+            </Link>
             <Link href="/ajuda" className="transition-colors hover:text-foreground">
               Ajuda
             </Link>
@@ -38,14 +41,14 @@ export function SiteFooter() {
           <h2 className="text-sm font-semibold">Fale com a gente</h2>
           <div className="flex flex-col gap-3">
             <a
-              href="mailto:contato@diversamente.com"
+              href="mailto:ecosbioambiental@gmail.com"
               className="group/button inline-flex h-10 shrink-0 items-center justify-start gap-1.5 rounded-full border border-border bg-background px-4 text-sm font-medium whitespace-nowrap transition-all outline-none select-none hover:bg-muted hover:text-foreground bg-card/80"
             >
               <Mail className="size-4 pointer-events-none shrink-0" aria-hidden="true" />
-              contato@diversamente.com
+              ecosbioambiental@gmail.com
             </a>
             <a
-              href="https://wa.me/5511999999999"
+              href="https://wa.me/5519992101212"
               target="_blank"
               rel="noopener noreferrer"
               className="group/button inline-flex h-10 shrink-0 items-center justify-start gap-1.5 rounded-full border border-transparent bg-primary text-primary-foreground px-4 text-sm font-medium whitespace-nowrap transition-all outline-none select-none hover:bg-primary/80"

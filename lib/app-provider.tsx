@@ -1,15 +1,11 @@
 "use client"
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react"
-import { MATERIAIS_INICIAIS, type Material } from "@/lib/catalog"
+import type { AuthChangeEvent, Session } from "@supabase/supabase-js"
+import type { Material } from "@/lib/catalog"
 import { CONFIG_PADRAO_SITE, type SiteConfig } from "@/lib/site-config"
-import {
-  fetchSupabaseMateriais,
-  fetchSupabaseSiteConfig,
-  inscreverSupabaseRealtime,
-  saveSupabaseMateriais,
-  saveSupabaseSiteConfig,
-} from "@/lib/supabase"
+import { createClient } from "@/lib/supabase/client"
+import { fetchSupabaseSiteConfig, saveSupabaseSiteConfig } from "@/lib/supabase"
 
 export type Papel = "admin" | "professor" | "aluno" | "pai" | "visitante"
 
@@ -18,30 +14,33 @@ export type Usuario = {
   nome: string
   email: string
   papel: Papel
-  categoriaId?: string // ex: "fundamental-1", "educacao-infantil", "1-ano", "todas"
+  categoriaId?: string
   categoriaNome?: string
 }
 
-export type ContaDemo = Usuario & { senha: string }
-
-export const CONTAS_INICIAIS: ContaDemo[] = [
-  { id: "u1", nome: "Administração", email: "admin@diversamente.com", senha: "admin123", papel: "admin", categoriaId: "todas", categoriaNome: "Todas as salas / anos" },
-  { id: "u2", nome: "Prof. Mariana Costa", email: "prof@diversamente.com", senha: "prof123", papel: "professor", categoriaId: "todas", categoriaNome: "Todas as salas / anos" },
-  { id: "u3", nome: "Lucas Silva (Estudante)", email: "aluno@diversamente.com", senha: "aluno123", papel: "aluno", categoriaId: "fundamental-1", categoriaNome: "Ensino Fundamental I" },
-  { id: "u4", nome: "Roberto Silva (Família)", email: "pai@diversamente.com", senha: "pai123", papel: "pai", categoriaId: "fundamental-1", categoriaNome: "Ensino Fundamental I" },
-]
+export type ContaUsuario = Usuario & { criadoEm?: string }
 
 type AppContextValue = {
   usuario: Usuario | null
   carregando: boolean
-  entrar: (email: string, senha: string) => { ok: boolean; erro?: string }
-  sair: () => void
-  usuarios: ContaDemo[]
-  cadastrarUsuarioPeloAdmin: (novo: Omit<ContaDemo, "id">) => { ok: boolean; erro?: string }
-  removerUsuarioPeloAdmin: (id: string) => void
+  entrar: (email: string, senha: string) => Promise<{ ok: boolean; erro?: string }>
+  sair: () => Promise<void>
+  usuarios: ContaUsuario[]
+  carregarUsuarios: () => Promise<void>
+  cadastrarUsuarioPeloAdmin: (novo: {
+    nome: string
+    email: string
+    senha: string
+    papel: Papel
+    categoriaId?: string
+    categoriaNome?: string
+  }) => Promise<{ ok: boolean; erro?: string }>
+  removerUsuarioPeloAdmin: (id: string) => Promise<{ ok: boolean; erro?: string }>
   materiais: Material[]
-  adicionarMaterial: (material: Omit<Material, "id" | "criadoEm">) => void
-  removerMaterial: (id: string) => void
+  carregandoMateriais: boolean
+  erroMateriais: string | null
+  recarregarMateriais: () => Promise<void>
+  removerMaterial: (id: string) => Promise<{ ok: boolean; erro?: string }>
   siteConfig: SiteConfig
   atualizarSiteConfig: (novaConfig: SiteConfig) => void
   restaurarSiteConfig: () => void
@@ -49,211 +48,232 @@ type AppContextValue = {
 
 const AppContext = createContext<AppContextValue | null>(null)
 
-const CHAVE_SESSAO = "diversamente:sessao"
-const CHAVE_USUARIOS = "diversamente:usuarios"
 const CHAVE_SITE_CONFIG = "diversamente:site-config"
-const CHAVE_MATERIAIS = "diversamente:materiais"
-const CHAVE_MATERIAIS_INICIALIZADO = "diversamente:materiais-inicializado"
+
+function linhaParaMaterial(row: Record<string, unknown>): Material {
+  return {
+    id: row.id as string,
+    titulo: row.titulo as string,
+    descricao: (row.descricao as string) ?? "",
+    tipo: row.tipo as Material["tipo"],
+    url: (row.url as string) ?? "",
+    storagePath: (row.storage_path as string | null) ?? null,
+    trilha: row.trilha as string,
+    categoria: row.categoria as string,
+    publico: row.publico as Material["publico"],
+    criadoEm: ((row.created_at as string) ?? new Date().toISOString()).slice(0, 10),
+  }
+}
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
+  const supabase = useMemo(() => createClient(), [])
+
   const [usuario, setUsuario] = useState<Usuario | null>(null)
   const [carregando, setCarregando] = useState(true)
-  const [usuarios, setUsuarios] = useState<ContaDemo[]>(CONTAS_INICIAIS)
-  const [materiais, setMateriais] = useState<Material[]>(MATERIAIS_INICIAIS)
+  const [usuarios, setUsuarios] = useState<ContaUsuario[]>([])
+  const [materiais, setMateriais] = useState<Material[]>([])
+  const [carregandoMateriais, setCarregandoMateriais] = useState(true)
+  const [erroMateriais, setErroMateriais] = useState<string | null>(null)
   const [siteConfig, setSiteConfig] = useState<SiteConfig>(CONFIG_PADRAO_SITE)
 
-  useEffect(() => {
-    try {
-      const sessaoSalva = sessionStorage.getItem(CHAVE_SESSAO)
-      if (sessaoSalva) setUsuario(JSON.parse(sessaoSalva) as Usuario)
+  const carregarPerfil = useCallback(
+    async (userId: string, email: string | undefined) => {
+      const { data: perfil, error } = await supabase.from("profiles").select("*").eq("id", userId).single()
 
-      const usuariosSalvos = localStorage.getItem(CHAVE_USUARIOS)
-      if (usuariosSalvos) setUsuarios(JSON.parse(usuariosSalvos))
-
-      const salvos = localStorage.getItem(CHAVE_MATERIAIS)
-      const jaInicializado = localStorage.getItem(CHAVE_MATERIAIS_INICIALIZADO)
-      if (salvos !== null && jaInicializado === "true") {
-        setMateriais(JSON.parse(salvos))
+      if (error) {
+        // Erro de rede/timeout: não derruba a sessão existente por uma falha transitória
+        // (o usuário continua autenticado no Supabase; só não conseguimos o perfil agora).
+        // "PGRST116" = nenhuma linha encontrada — aí sim não há perfil e a sessão é inválida.
+        if (error.code === "PGRST116") setUsuario(null)
+        return
       }
-    } catch {
-      // ignora erros de parsing em ambiente de dev
-    }
+      if (!perfil) {
+        setUsuario(null)
+        return
+      }
 
-    async function carregarDadosGlobais() {
-      // 1. Carrega configuracoes do layout (Elementor) do Supabase DB
+      setUsuario({
+        id: userId,
+        nome: perfil.nome,
+        email: perfil.email ?? email ?? "",
+        papel: perfil.papel,
+        categoriaId: perfil.categoria_id ?? undefined,
+        categoriaNome: perfil.categoria_nome ?? undefined,
+      })
+    },
+    [supabase],
+  )
+
+  const recarregarMateriais = useCallback(async () => {
+    setCarregandoMateriais(true)
+    const { data, error } = await supabase.from("materials").select("*").order("created_at", { ascending: false })
+    if (!error && data) {
+      setMateriais(data.map(linhaParaMaterial))
+      setErroMateriais(null)
+    } else {
+      // Não zera a lista anterior numa falha transitória — evita mostrar
+      // "biblioteca vazia" quando na verdade a consulta falhou.
+      setErroMateriais("Não foi possível carregar os materiais agora. Tente novamente em instantes.")
+    }
+    setCarregandoMateriais(false)
+  }, [supabase])
+
+  useEffect(() => {
+    let ativo = true
+
+    async function iniciar() {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession()
+
+      if (session?.user) {
+        await carregarPerfil(session.user.id, session.user.email)
+      }
+
       const configSupabase = await fetchSupabaseSiteConfig()
       if (configSupabase && configSupabase.home) {
         setSiteConfig(configSupabase)
       } else {
         try {
-          const res = await fetch("/api/site-config")
-          const data = await res.json()
-          if (data && typeof data === "object" && data.home) {
-            setSiteConfig(data)
-          }
+          const salvo = localStorage.getItem(CHAVE_SITE_CONFIG)
+          if (salvo) setSiteConfig(JSON.parse(salvo))
         } catch {}
       }
 
-      // 2. Carrega materiais do Supabase DB
-      const materiaisSupabase = await fetchSupabaseMateriais()
-      if (materiaisSupabase !== null && Array.isArray(materiaisSupabase)) {
-        setMateriais(materiaisSupabase)
-        try {
-          localStorage.setItem(CHAVE_MATERIAIS, JSON.stringify(materiaisSupabase))
-          localStorage.setItem(CHAVE_MATERIAIS_INICIALIZADO, "true")
-        } catch {}
-      } else {
-        // Se nunca foi salvo no Supabase ainda, verifica se tem no localStorage
-        const salvos = localStorage.getItem(CHAVE_MATERIAIS)
-        const jaInicializado = localStorage.getItem(CHAVE_MATERIAIS_INICIALIZADO)
-        if (salvos !== null && jaInicializado === "true") {
-          try {
-            setMateriais(JSON.parse(salvos))
-          } catch {}
-        } else {
-          // Primeira execução absoluta: salva os iniciais no Supabase DB para registrar a versão inicial oficial
-          setMateriais(MATERIAIS_INICIAIS)
-          saveSupabaseMateriais(MATERIAIS_INICIAIS).catch(() => {})
-          try {
-            localStorage.setItem(CHAVE_MATERIAIS, JSON.stringify(MATERIAIS_INICIAIS))
-            localStorage.setItem(CHAVE_MATERIAIS_INICIALIZADO, "true")
-          } catch {}
-        }
-      }
-
-      setCarregando(false)
+      if (ativo) setCarregando(false)
     }
 
-    carregarDadosGlobais()
+    iniciar()
 
-    // 3. Inscreve no Supabase Realtime para sincronizar alteracoes instantaneamente
-    const cancelarRealtime = inscreverSupabaseRealtime(
-      (novaConfig) => setSiteConfig(novaConfig),
-      (novosMateriais) => {
-        if (Array.isArray(novosMateriais)) {
-          setMateriais(novosMateriais)
-          try {
-            localStorage.setItem(CHAVE_MATERIAIS, JSON.stringify(novosMateriais))
-            localStorage.setItem(CHAVE_MATERIAIS_INICIALIZADO, "true")
-          } catch {}
-        }
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((evento: AuthChangeEvent, session: Session | null) => {
+      // INITIAL_SESSION já foi tratado por iniciar() acima (getSession + carregarPerfil).
+      // Sem este guard, o perfil era buscado duas vezes a cada carregamento da página.
+      if (evento === "INITIAL_SESSION") return
+
+      if (session?.user) {
+        carregarPerfil(session.user.id, session.user.email)
+      } else {
+        setUsuario(null)
       }
-    )
+    })
 
     return () => {
-      cancelarRealtime()
+      ativo = false
+      subscription.unsubscribe()
     }
-  }, [])
+  }, [supabase, carregarPerfil])
 
-  const persistirSessao = useCallback((u: Usuario | null) => {
-    setUsuario(u)
+  // Carrega materiais assim que há um usuário logado (RLS exige autenticação) e assina mudanças em tempo real.
+  useEffect(() => {
+    if (!usuario) {
+      setMateriais([])
+      setErroMateriais(null)
+      setCarregandoMateriais(false)
+      return
+    }
+
+    recarregarMateriais()
+
+    const canal = supabase
+      .channel("materials_realtime")
+      .on("postgres_changes", { event: "*", schema: "public", table: "materials" }, () => {
+        recarregarMateriais()
+      })
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(canal)
+    }
+  }, [usuario, supabase, recarregarMateriais])
+
+  // Carrega a lista de usuários apenas quando o logado é admin (a rota já exige isso no servidor).
+  useEffect(() => {
+    if (usuario?.papel === "admin") {
+      carregarUsuarios()
+    } else {
+      setUsuarios([])
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [usuario?.papel])
+
+  const entrar = useCallback(
+    async (email: string, senha: string) => {
+      const { data, error } = await supabase.auth.signInWithPassword({ email: email.trim(), password: senha })
+      if (error || !data.user) {
+        return { ok: false, erro: "E-mail ou senha incorretos." }
+      }
+      await carregarPerfil(data.user.id, data.user.email)
+      return { ok: true }
+    },
+    [supabase, carregarPerfil],
+  )
+
+  const sair = useCallback(async () => {
+    await supabase.auth.signOut()
+    setUsuario(null)
+  }, [supabase])
+
+  const carregarUsuarios = useCallback(async () => {
     try {
-      if (u) sessionStorage.setItem(CHAVE_SESSAO, JSON.stringify(u))
-      else sessionStorage.removeItem(CHAVE_SESSAO)
+      const res = await fetch("/api/admin/usuarios")
+      if (!res.ok) return
+      const data = await res.json()
+      setUsuarios(data.usuarios ?? [])
     } catch {
       // ignora
     }
   }, [])
 
-  const entrar = useCallback(
-    (email: string, senha: string) => {
-      const conta = usuarios.find((c) => c.email.toLowerCase() === email.trim().toLowerCase())
-      if (!conta || conta.senha !== senha) {
-        return { ok: false, erro: "E-mail ou senha incorretos." }
-      }
-      const userSemSenha: Usuario = {
-        id: conta.id,
-        nome: conta.nome,
-        email: conta.email,
-        papel: conta.papel,
-        categoriaId: conta.categoriaId,
-        categoriaNome: conta.categoriaNome,
-      }
-      persistirSessao(userSemSenha)
-      return { ok: true }
-    },
-    [usuarios, persistirSessao],
-  )
-
-  const sair = useCallback(() => persistirSessao(null), [persistirSessao])
-
   const cadastrarUsuarioPeloAdmin = useCallback(
-    (novo: Omit<ContaDemo, "id">) => {
-      if (usuarios.some((c) => c.email.toLowerCase() === novo.email.trim().toLowerCase())) {
-        return { ok: false, erro: "Este e-mail já está cadastrado na plataforma." }
-      }
-      const novaConta: ContaDemo = {
-        ...novo,
-        id: `u${Date.now()}`,
-        email: novo.email.trim(),
-      }
-      const listaAtualizada = [...usuarios, novaConta]
-      setUsuarios(listaAtualizada)
+    async (novo: { nome: string; email: string; senha: string; papel: Papel; categoriaId?: string; categoriaNome?: string }) => {
       try {
-        localStorage.setItem(CHAVE_USUARIOS, JSON.stringify(listaAtualizada))
+        const res = await fetch("/api/admin/usuarios", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(novo),
+        })
+        const data = await res.json()
+        if (!res.ok) return { ok: false, erro: data.erro ?? "Erro ao cadastrar usuário." }
+        await carregarUsuarios()
+        return { ok: true }
       } catch {
-        // ignora
+        return { ok: false, erro: "Erro de conexão ao cadastrar usuário." }
       }
-      return { ok: true }
     },
-    [usuarios],
+    [carregarUsuarios],
   )
 
   const removerUsuarioPeloAdmin = useCallback(
-    (id: string) => {
-      const listaAtualizada = usuarios.filter((u) => u.id !== id)
-      setUsuarios(listaAtualizada)
+    async (id: string) => {
       try {
-        localStorage.setItem(CHAVE_USUARIOS, JSON.stringify(listaAtualizada))
+        const res = await fetch(`/api/admin/usuarios/${id}`, { method: "DELETE" })
+        const data = await res.json()
+        if (!res.ok) return { ok: false, erro: data.erro ?? "Erro ao remover usuário." }
+        await carregarUsuarios()
+        return { ok: true }
       } catch {
-        // ignora
+        return { ok: false, erro: "Erro de conexão ao remover usuário." }
       }
     },
-    [usuarios],
+    [carregarUsuarios],
   )
 
-  const adicionarMaterial = useCallback((material: Omit<Material, "id" | "criadoEm">) => {
-    setMateriais((anteriores) => {
-      const novaLista = [
-        {
-          ...material,
-          id: `m${Date.now()}`,
-          criadoEm: new Date().toISOString().slice(0, 10),
-        },
-        ...anteriores,
-      ]
-      saveSupabaseMateriais(novaLista).catch(() => {})
-      try {
-        localStorage.setItem(CHAVE_MATERIAIS, JSON.stringify(novaLista))
-        localStorage.setItem(CHAVE_MATERIAIS_INICIALIZADO, "true")
-      } catch {}
-      return novaLista
-    })
-  }, [])
-
-  const removerMaterial = useCallback((id: string) => {
-    setMateriais((anteriores) => {
-      const novaLista = anteriores.filter((m) => m.id !== id)
-      saveSupabaseMateriais(novaLista).catch(() => {})
-      try {
-        localStorage.setItem(CHAVE_MATERIAIS, JSON.stringify(novaLista))
-        localStorage.setItem(CHAVE_MATERIAIS_INICIALIZADO, "true")
-      } catch {}
-      return novaLista
-    })
+  const removerMaterial = useCallback(async (id: string) => {
+    try {
+      const res = await fetch(`/api/materiais/${id}`, { method: "DELETE" })
+      const data = await res.json()
+      if (!res.ok) return { ok: false, erro: data.erro ?? "Erro ao remover material." }
+      return { ok: true }
+    } catch {
+      return { ok: false, erro: "Erro de conexão ao remover material." }
+    }
   }, [])
 
   const atualizarSiteConfig = useCallback((novaConfig: SiteConfig) => {
     setSiteConfig(novaConfig)
-    
     saveSupabaseSiteConfig(novaConfig).catch(() => {})
-
-    fetch("/api/site-config", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(novaConfig),
-    }).catch(() => {})
-
     try {
       localStorage.setItem(CHAVE_SITE_CONFIG, JSON.stringify(novaConfig))
     } catch {
@@ -277,10 +297,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       entrar,
       sair,
       usuarios,
+      carregarUsuarios,
       cadastrarUsuarioPeloAdmin,
       removerUsuarioPeloAdmin,
       materiais,
-      adicionarMaterial,
+      carregandoMateriais,
+      erroMateriais,
+      recarregarMateriais,
       removerMaterial,
       siteConfig,
       atualizarSiteConfig,
@@ -292,10 +315,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       entrar,
       sair,
       usuarios,
+      carregarUsuarios,
       cadastrarUsuarioPeloAdmin,
       removerUsuarioPeloAdmin,
       materiais,
-      adicionarMaterial,
+      carregandoMateriais,
+      erroMateriais,
+      recarregarMateriais,
       removerMaterial,
       siteConfig,
       atualizarSiteConfig,

@@ -2,13 +2,22 @@
 
 import { use, useMemo, useState } from "react"
 import { notFound } from "next/navigation"
-import { FileText, Gamepad2, Inbox, PlayCircle, Lock } from "lucide-react"
+import { AlertTriangle, FileText, Gamepad2, Inbox, PlayCircle, Lock } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Breadcrumbs } from "@/components/app/breadcrumbs"
 import { MaterialDialog } from "@/components/app/material-dialog"
-import { getCategoria, getTrilha, PUBLICOS, TIPOS, type Material, type TipoMaterial, type PublicoSlug } from "@/lib/catalog"
+import {
+  getCategoria,
+  getTrilha,
+  PUBLICOS,
+  TIPOS,
+  publicosPermitidosParaPapel,
+  usuarioPodeAcessarCategoria,
+  type Material,
+  type TipoMaterial,
+} from "@/lib/catalog"
 import { useApp } from "@/lib/app-provider"
 
 const ICONES: Record<TipoMaterial, typeof FileText> = {
@@ -23,26 +32,17 @@ export default function CategoriaPage({
   params: Promise<{ trilha: string; categoria: string }>
 }) {
   const { trilha: trilhaSlug, categoria: categoriaSlug } = use(params)
-  const { materiais, usuario } = useApp()
+  const { materiais, usuario, erroMateriais } = useApp()
   const [selecionado, setSelecionado] = useState<Material | null>(null)
 
   const trilha = getTrilha(trilhaSlug)
   const categoria = getCategoria(trilhaSlug, categoriaSlug)
   if (!trilha || !categoria) notFound()
 
-  const publicosPermitidos = useMemo<PublicoSlug[]>(() => {
-    const papel = usuario?.papel ?? "visitante"
-    if (papel === "admin" || papel === "professor") {
-      return categoria.publicos
-    }
-    if (papel === "aluno") {
-      return categoria.publicos.filter((p) => p === "aluno" || p === "crianca")
-    }
-    if (papel === "pai") {
-      return categoria.publicos.filter((p) => p === "familia" || p === "aluno" || p === "crianca")
-    }
-    return categoria.publicos
-  }, [usuario, categoria])
+  const publicosPermitidos = useMemo(
+    () => publicosPermitidosParaPapel(usuario?.papel, categoria.publicos),
+    [usuario, categoria],
+  )
 
   const doGrupo = useMemo(
     () => materiais.filter((m) => m.trilha === trilhaSlug && m.categoria === categoriaSlug),
@@ -50,6 +50,35 @@ export default function CategoriaPage({
   )
 
   const publicoInicial = publicosPermitidos.length > 0 ? publicosPermitidos[0] : categoria.publicos[0]
+
+  // Restrição de turma/ano definida em /admin/usuarios (usuario.categoriaId).
+  // Sem isso, um aluno restrito a uma turma conseguia ver o conteúdo de qualquer
+  // outra só trocando a URL.
+  const podeAcessarCategoria =
+    usuario?.papel === "admin" ||
+    usuario?.papel === "professor" ||
+    usuarioPodeAcessarCategoria(usuario?.categoriaId, trilhaSlug, categoriaSlug)
+
+  if (!podeAcessarCategoria) {
+    return (
+      <div className="pb-8">
+        <Breadcrumbs
+          itens={[
+            { label: "Conteúdos", href: "/conteudos" },
+            { label: trilha.nome, href: `/conteudos/${trilhaSlug}` },
+            { label: categoria.nome },
+          ]}
+        />
+        <div className="glass mt-8 flex flex-col items-center gap-3 rounded-3xl border p-8 sm:p-12 text-center">
+          <Lock className="size-8 text-muted-foreground" aria-hidden="true" />
+          <p className="text-sm text-muted-foreground">
+            Esta categoria não está disponível para a sua turma. Fale com a administração se acredita que isso é um
+            engano.
+          </p>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="pb-8">
@@ -72,6 +101,16 @@ export default function CategoriaPage({
           Escolha a aba de público para acessar cadernos, vídeos e jogos formativos.
         </p>
       </header>
+
+      {erroMateriais ? (
+        <div
+          role="alert"
+          className="mt-4 flex items-center gap-2 rounded-2xl border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive"
+        >
+          <AlertTriangle className="size-4 shrink-0" aria-hidden="true" />
+          {erroMateriais}
+        </div>
+      ) : null}
 
       {/* Nível 3: sub-abas de público com rolagem suave no celular */}
       <Tabs defaultValue={publicoInicial} className="mt-6 sm:mt-8">

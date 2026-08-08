@@ -9,9 +9,11 @@ import { AuthDialog } from "@/components/auth/auth-dialog"
 import { useApp } from "@/lib/app-provider"
 
 const LINKS = [
+  { href: "/", label: "Início" },
   { href: "/quem-somos", label: "Quem Somos" },
   { href: "/autores", label: "Autores" },
   { href: "/mentoria", label: "Mentoria" },
+  { href: "/mural", label: "Mural" },
   { href: "/ajuda", label: "Ajuda" },
 ]
 

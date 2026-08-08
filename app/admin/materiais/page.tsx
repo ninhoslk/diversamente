@@ -40,9 +40,13 @@ export default function AdminMateriaisPage() {
     })
   }, [materiais, busca, trilha, tipo])
 
-  function confirmarRemocao() {
+  async function confirmarRemocao() {
     if (!materialParaRemover) return
-    removerMaterial(materialParaRemover.id)
+    const resultado = await removerMaterial(materialParaRemover.id)
+    if (!resultado.ok) {
+      toast.error(resultado.erro ?? "Não foi possível excluir o material.")
+      return
+    }
     toast.success("Material excluído com sucesso", { description: materialParaRemover.titulo })
     setMaterialParaRemover(null)
   }
@@ -93,9 +97,11 @@ export default function AdminMateriaisPage() {
             </div>
             <div className="flex flex-col gap-2">
               <Label htmlFor="filtro-trilha">Trilha</Label>
-              <Select value={trilha} onValueChange={setTrilha}>
+              <Select value={trilha} onValueChange={(v) => setTrilha(v ?? "todas")}>
                 <SelectTrigger id="filtro-trilha" className="w-full rounded-full bg-card sm:w-52">
-                  <SelectValue />
+                  <SelectValue>
+                    {(v: string) => (v === "todas" ? "Todas as trilhas" : (TRILHAS.find((t) => t.slug === v)?.nome ?? v))}
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent className="rounded-2xl">
                   <SelectItem value="todas">Todas as trilhas</SelectItem>
@@ -109,9 +115,11 @@ export default function AdminMateriaisPage() {
             </div>
             <div className="flex flex-col gap-2">
               <Label htmlFor="filtro-tipo">Tipo</Label>
-              <Select value={tipo} onValueChange={setTipo}>
+              <Select value={tipo} onValueChange={(v) => setTipo(v ?? "todos")}>
                 <SelectTrigger id="filtro-tipo" className="w-full rounded-full bg-card sm:w-40">
-                  <SelectValue />
+                  <SelectValue>
+                    {(v: string) => (v === "todos" ? "Todos os tipos" : (TIPOS.find((t) => t.slug === v)?.label ?? v))}
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent className="rounded-2xl">
                   <SelectItem value="todos">Todos os tipos</SelectItem>

@@ -13,3 +13,10 @@ __v0_jsx-dev-runtime.ts
 node_modules
 .next/
 .DS_Store
+*.tsbuildinfo
+
+# Artefatos locais do Graphify (gerados sob demanda, não fazem parte do app)
+graphify-out/
+
+# Configurações locais do Claude Code (específicas desta máquina)
+.claude/settings.local.json

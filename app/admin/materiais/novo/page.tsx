@@ -12,9 +12,9 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
 import { CATEGORIAS, PUBLICOS, TRILHAS, type PublicoSlug, type TipoMaterial } from "@/lib/catalog"
-import { useApp } from "@/lib/app-provider"
-import { uploadPdfParaSupabase } from "@/lib/supabase"
 import { cn } from "@/lib/utils"
+
+const TAMANHO_MAXIMO_PDF = 50 * 1024 * 1024 // 50MB — deve casar com o limite da rota /api/materiais
 
 const TIPOS_FORM: { slug: TipoMaterial; label: string; ajuda: string; Icon: typeof FileText }[] = [
   { slug: "pdf", label: "PDF", ajuda: "Leitura protegida no site, sem download", Icon: FileText },
@@ -24,7 +24,6 @@ const TIPOS_FORM: { slug: TipoMaterial; label: string; ajuda: string; Icon: type
 
 export default function NovoMaterialPage() {
   const router = useRouter()
-  const { adicionarMaterial } = useApp()
 
   const [tipo, setTipo] = useState<TipoMaterial>("pdf")
   const [titulo, setTitulo] = useState("")
@@ -34,6 +33,7 @@ export default function NovoMaterialPage() {
   const [publico, setPublico] = useState<PublicoSlug | "">("")
   const [url, setUrl] = useState("")
   const [arquivoPdf, setArquivoPdf] = useState<File | null>(null)
+  const [modoPdf, setModoPdf] = useState<"upload" | "link">("upload")
   const [enviando, setEnviando] = useState(false)
   const [erro, setErro] = useState<string | null>(null)
 
@@ -43,14 +43,14 @@ export default function NovoMaterialPage() {
     [categoriasDaTrilha, categoria],
   )
 
-  function onTrilhaChange(valor: string) {
-    setTrilha(valor)
+  function onTrilhaChange(valor: string | null) {
+    setTrilha(valor ?? TRILHAS[0].slug)
     setCategoria("")
     setPublico("")
   }
 
-  function onCategoriaChange(valor: string) {
-    setCategoria(valor)
+  function onCategoriaChange(valor: string | null) {
+    setCategoria(valor ?? "")
     setPublico("")
   }
 
@@ -61,34 +61,41 @@ export default function NovoMaterialPage() {
     if (!titulo.trim()) return setErro("Informe o título do material.")
     if (!categoria) return setErro("Escolha a categoria de destino.")
     if (!publico) return setErro("Escolha o público que verá este material.")
-    if (tipo === "pdf" && !arquivoPdf) return setErro("Selecione o arquivo PDF para upload.")
+    if (tipo === "pdf" && modoPdf === "upload" && !arquivoPdf) return setErro("Selecione o arquivo PDF para upload.")
+    if (tipo === "pdf" && modoPdf === "link" && !url.trim()) return setErro("Informe o link do PDF.")
     if (tipo !== "pdf" && !url.trim()) return setErro("Informe o link do material.")
 
     try {
       setEnviando(true)
-      let urlFinal = url.trim()
 
-      if (tipo === "pdf" && arquivoPdf) {
-        // Upload direto do arquivo PDF para o servidor do Supabase Storage
-        urlFinal = await uploadPdfParaSupabase(arquivoPdf)
+      const formData = new FormData()
+      formData.set("titulo", titulo.trim())
+      formData.set("descricao", descricao.trim())
+      formData.set("tipo", tipo)
+      formData.set("trilha", trilha)
+      formData.set("categoria", categoria)
+      formData.set("publico", publico)
+
+      if (tipo === "pdf" && modoPdf === "upload" && arquivoPdf) {
+        formData.set("arquivo", arquivoPdf)
+      } else {
+        formData.set("url", url.trim())
       }
 
-      adicionarMaterial({
-        titulo: titulo.trim(),
-        descricao: descricao.trim(),
-        tipo,
-        url: urlFinal,
-        trilha,
-        categoria,
-        publico: publico as PublicoSlug,
-      })
+      const res = await fetch("/api/materiais", { method: "POST", body: formData })
+      const data = await res.json()
+
+      if (!res.ok || !data.ok) {
+        setErro(data.erro ?? "Não foi possível publicar o material. Tente novamente.")
+        return
+      }
 
       toast.success("Material publicado com sucesso!", {
         description: `${titulo.trim()} já está disponível na biblioteca.`,
       })
       router.push("/admin/materiais")
     } catch {
-      setErro("Não foi possível enviar o arquivo PDF. Tente novamente.")
+      setErro("Erro de conexão ao publicar o material. Tente novamente.")
     } finally {
       setEnviando(false)
     }
@@ -166,39 +173,101 @@ export default function NovoMaterialPage() {
             </div>
 
             {tipo === "pdf" ? (
-              <div className="flex flex-col gap-2">
-                <Label htmlFor="arquivo-pdf">Arquivo PDF (Upload direto)</Label>
-                <label
-                  htmlFor="arquivo-pdf"
-                  className="flex cursor-pointer flex-col items-center gap-2 rounded-2xl border-2 border-dashed border-border bg-card/60 px-4 py-8 text-center transition-colors hover:border-primary/60 hover:bg-card"
-                >
-                  <UploadCloud className="size-7 text-primary" aria-hidden="true" />
-                  {arquivoPdf ? (
-                    <div className="flex flex-col items-center gap-0.5">
-                      <span className="text-sm font-semibold text-primary">{arquivoPdf.name}</span>
-                      <span className="text-xs text-muted-foreground">
-                        {(arquivoPdf.size / (1024 * 1024)).toFixed(1)} MB · Pronto para upload seguro
-                      </span>
-                    </div>
-                  ) : (
-                    <>
-                      <span className="text-sm font-medium">Clique para selecionar o PDF do seu computador</span>
-                      <span className="text-xs text-muted-foreground">
-                        O arquivo será enviado para o servidor e exibido com leitor protegido (download/impressão desabilitados).
-                      </span>
-                    </>
-                  )}
-                </label>
-                <Input
-                  id="arquivo-pdf"
-                  type="file"
-                  accept="application/pdf"
-                  className="sr-only"
-                  onChange={(e) => {
-                    const file = e.target.files?.[0]
-                    if (file) setArquivoPdf(file)
-                  }}
-                />
+              <div className="flex flex-col gap-3">
+                <div className="flex flex-col gap-2">
+                  <legend className="text-sm font-medium">Origem do PDF</legend>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setModoPdf("upload")}
+                      aria-pressed={modoPdf === "upload"}
+                      className={cn(
+                        "rounded-xl border-2 px-3 py-2 text-sm font-medium transition-colors",
+                        modoPdf === "upload" ? "border-primary bg-primary/5" : "border-transparent bg-card/70 hover:border-border",
+                      )}
+                    >
+                      Enviar arquivo
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setModoPdf("link")}
+                      aria-pressed={modoPdf === "link"}
+                      className={cn(
+                        "rounded-xl border-2 px-3 py-2 text-sm font-medium transition-colors",
+                        modoPdf === "link" ? "border-primary bg-primary/5" : "border-transparent bg-card/70 hover:border-border",
+                      )}
+                    >
+                      Colar link
+                    </button>
+                  </div>
+                </div>
+
+                {modoPdf === "upload" ? (
+                  <div className="flex flex-col gap-2">
+                    <Label htmlFor="arquivo-pdf">Arquivo PDF (Upload direto)</Label>
+                    <label
+                      htmlFor="arquivo-pdf"
+                      className="flex cursor-pointer flex-col items-center gap-2 rounded-2xl border-2 border-dashed border-border bg-card/60 px-4 py-8 text-center transition-colors hover:border-primary/60 hover:bg-card"
+                    >
+                      <UploadCloud className="size-7 text-primary" aria-hidden="true" />
+                      {arquivoPdf ? (
+                        <div className="flex flex-col items-center gap-0.5">
+                          <span className="text-sm font-semibold text-primary">{arquivoPdf.name}</span>
+                          <span className="text-xs text-muted-foreground">
+                            {(arquivoPdf.size / (1024 * 1024)).toFixed(1)} MB · Pronto para upload seguro
+                          </span>
+                        </div>
+                      ) : (
+                        <>
+                          <span className="text-sm font-medium">Clique para selecionar o PDF do seu computador</span>
+                          <span className="text-xs text-muted-foreground">
+                            O arquivo fica em um repositório privado e é exibido com leitor protegido (sem download/impressão).
+                          </span>
+                        </>
+                      )}
+                    </label>
+                    <Input
+                      id="arquivo-pdf"
+                      type="file"
+                      accept="application/pdf"
+                      className="sr-only"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0]
+                        e.target.value = "" // permite selecionar o mesmo arquivo de novo após um erro
+                        if (!file) return
+
+                        if (file.type !== "application/pdf") {
+                          setArquivoPdf(null)
+                          setErro("O arquivo selecionado não é um PDF.")
+                          return
+                        }
+                        if (file.size > TAMANHO_MAXIMO_PDF) {
+                          setArquivoPdf(null)
+                          setErro(
+                            `O arquivo tem ${(file.size / (1024 * 1024)).toFixed(1)} MB — o limite é ${TAMANHO_MAXIMO_PDF / (1024 * 1024)} MB.`,
+                          )
+                          return
+                        }
+                        setErro(null)
+                        setArquivoPdf(file)
+                      }}
+                    />
+                  </div>
+                ) : (
+                  <div className="flex flex-col gap-2">
+                    <Label htmlFor="url-pdf">Link do PDF</Label>
+                    <Input
+                      id="url-pdf"
+                      value={url}
+                      onChange={(e) => setUrl(e.target.value)}
+                      placeholder="https://..."
+                      className="rounded-xl bg-card"
+                    />
+                    <span className="text-xs text-muted-foreground">
+                      Use para PDFs já hospedados (ex.: Google Drive). O controle de download depende das permissões do link original.
+                    </span>
+                  </div>
+                )}
               </div>
             ) : (
               <div className="flex flex-col gap-2">
@@ -225,7 +294,7 @@ export default function NovoMaterialPage() {
               <Label htmlFor="trilha">Trilha</Label>
               <Select value={trilha} onValueChange={onTrilhaChange}>
                 <SelectTrigger id="trilha" className="rounded-xl bg-card">
-                  <SelectValue />
+                  <SelectValue>{(v: string) => TRILHAS.find((t) => t.slug === v)?.nome ?? v}</SelectValue>
                 </SelectTrigger>
                 <SelectContent className="rounded-2xl">
                   {TRILHAS.map((t) => (
@@ -241,7 +310,9 @@ export default function NovoMaterialPage() {
               <Label htmlFor="categoria">Categoria</Label>
               <Select value={categoria} onValueChange={onCategoriaChange}>
                 <SelectTrigger id="categoria" className="rounded-xl bg-card">
-                  <SelectValue placeholder="Selecione a categoria" />
+                  <SelectValue placeholder="Selecione a categoria">
+                    {(v: string) => (v ? (categoriasDaTrilha.find((c) => c.slug === v)?.nome ?? v) : "Selecione a categoria")}
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent className="rounded-2xl">
                   {categoriasDaTrilha.map((c) => (
@@ -257,7 +328,11 @@ export default function NovoMaterialPage() {
               <Label htmlFor="publico">Público</Label>
               <Select value={publico} onValueChange={(v) => setPublico(v as PublicoSlug)} disabled={!categoria}>
                 <SelectTrigger id="publico" className="rounded-xl bg-card">
-                  <SelectValue placeholder={categoria ? "Selecione o público" : "Escolha a categoria primeiro"} />
+                  <SelectValue placeholder={categoria ? "Selecione o público" : "Escolha a categoria primeiro"}>
+                    {(v: PublicoSlug) =>
+                      v ? (PUBLICOS[v] ?? v) : categoria ? "Selecione o público" : "Escolha a categoria primeiro"
+                    }
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent className="rounded-2xl">
                   {publicosDaCategoria.map((p) => (

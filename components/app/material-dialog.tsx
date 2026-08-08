@@ -28,7 +28,14 @@ export function MaterialDialog({
             </DialogHeader>
 
             <div className="mt-2">
-              {material.tipo === "pdf" ? <PdfViewer url={material.url} titulo={material.titulo} /> : null}
+              {material.tipo === "pdf" ? (
+                <PdfViewer
+                  materialId={material.id}
+                  url={material.url}
+                  storagePath={material.storagePath}
+                  titulo={material.titulo}
+                />
+              ) : null}
               {material.tipo === "video" ? <VideoViewer url={material.url} titulo={material.titulo} /> : null}
               {material.tipo === "jogo" ? (
                 <div className="flex flex-col items-center gap-4 rounded-2xl bg-secondary/50 p-6 sm:p-10 text-center">

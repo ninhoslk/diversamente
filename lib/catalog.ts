@@ -7,6 +7,8 @@ export type Trilha = {
   nome: string
   descricao: string
   gradient: string
+  /** Selo curto exibido no card para destacar trilhas especiais/novas (ex.: "🌱 Novo"). */
+  badge?: string
 }
 
 export type Categoria = {
@@ -21,11 +23,47 @@ export type Material = {
   titulo: string
   descricao: string
   tipo: TipoMaterial
+  /** Link externo (vídeo, jogo, ou PDF hospedado fora do Storage). Vazio quando o PDF usa storagePath. */
   url: string
+  /** Caminho do arquivo no bucket privado "materiais" (upload direto de PDF). */
+  storagePath?: string | null
   trilha: string
   categoria: string
   publico: PublicoSlug
   criadoEm: string
+}
+
+export type PapelUsuario = "admin" | "professor" | "aluno" | "pai" | "visitante"
+
+/** Quais "públicos" de conteúdo um usuário com este papel pode visualizar. Usado tanto na UI quanto nas rotas de servidor (autorização de URL assinada). */
+export function publicosPermitidosParaPapel(papel: PapelUsuario | undefined, publicosDaCategoria: PublicoSlug[]): PublicoSlug[] {
+  const p = papel ?? "visitante"
+  if (p === "admin" || p === "professor") {
+    return publicosDaCategoria
+  }
+  if (p === "aluno") {
+    return publicosDaCategoria.filter((x) => x === "aluno" || x === "crianca")
+  }
+  if (p === "pai") {
+    return publicosDaCategoria.filter((x) => x === "familia" || x === "aluno" || x === "crianca")
+  }
+  return []
+}
+
+/**
+ * Confere a restrição de turma/ano (`categoriaId` do perfil, definida em /admin/usuarios).
+ * `categoriaId` pode ser "todas" (sem restrição), o slug de uma trilha inteira
+ * (ex.: "fundamental-1") ou o slug de uma categoria específica (ex.: "3-ano").
+ * Sem essa checagem, um aluno restrito a uma turma conseguia abrir material de
+ * qualquer outra turma apenas navegando para a URL correspondente.
+ */
+export function usuarioPodeAcessarCategoria(
+  categoriaIdUsuario: string | null | undefined,
+  trilha: string,
+  categoria: string,
+): boolean {
+  if (!categoriaIdUsuario || categoriaIdUsuario === "todas") return true
+  return categoriaIdUsuario === trilha || categoriaIdUsuario === categoria
 }
 
 export const TRILHAS: Trilha[] = [
@@ -40,6 +78,13 @@ export const TRILHAS: Trilha[] = [
     nome: "Ensino Fundamental I",
     descricao: "Do 1º ao 5º ano, com trilhas para estudante, educador e família.",
     gradient: "from-holo-blue via-holo-mint to-holo-yellow",
+  },
+  {
+    slug: "educacao-ambiental",
+    nome: "Educação Ambiental",
+    descricao: "Trilha especial de sustentabilidade e consciência ambiental, do 1º ao 5º ano.",
+    gradient: "from-emerald-400 via-green-500 to-lime-400",
+    badge: "🌱 Novo",
   },
 ]
 
@@ -64,6 +109,14 @@ export const CATEGORIAS: Categoria[] = [
   { slug: "3-ano", nome: "3º Ano", trilha: "fundamental-1", publicos: ["aluno", "educador", "familia"] },
   { slug: "4-ano", nome: "4º Ano", trilha: "fundamental-1", publicos: ["aluno", "educador", "familia"] },
   { slug: "5-ano", nome: "5º Ano", trilha: "fundamental-1", publicos: ["aluno", "educador", "familia"] },
+
+  // Trilha de Educação Ambiental — categorias com slugs próprios (prefixo "amb-") para
+  // não colidir com as categorias de mesmo ano da trilha Fundamental I.
+  { slug: "amb-1-ano", nome: "1º Ano", trilha: "educacao-ambiental", publicos: ["aluno", "educador", "familia"] },
+  { slug: "amb-2-ano", nome: "2º Ano", trilha: "educacao-ambiental", publicos: ["aluno", "educador", "familia"] },
+  { slug: "amb-3-ano", nome: "3º Ano", trilha: "educacao-ambiental", publicos: ["aluno", "educador", "familia"] },
+  { slug: "amb-4-ano", nome: "4º Ano", trilha: "educacao-ambiental", publicos: ["aluno", "educador", "familia"] },
+  { slug: "amb-5-ano", nome: "5º Ano", trilha: "educacao-ambiental", publicos: ["aluno", "educador", "familia"] },
 ]
 
 export const TIPOS: { slug: TipoMaterial; label: string }[] = [
