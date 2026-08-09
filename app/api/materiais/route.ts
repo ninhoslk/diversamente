@@ -3,12 +3,6 @@ import { getUsuarioAtual } from "@/lib/supabase/server"
 import { createAdminSupabaseClient } from "@/lib/supabase/admin"
 import { CATEGORIAS, TRILHAS, PUBLICOS, type PublicoSlug, type TipoMaterial } from "@/lib/catalog"
 
-const TAMANHO_MAXIMO_PDF = 50 * 1024 * 1024 // 50MB, deve casar com file_size_limit do bucket
-
-function sanitizarNomeArquivo(nome: string) {
-  return nome.replace(/[^a-zA-Z0-9.\-_]/g, "_").slice(-140)
-}
-
 export function validarDestino(trilha: string, categoria: string, publico: string) {
   const trilhaValida = TRILHAS.some((t) => t.slug === trilha)
   if (!trilhaValida) return "Trilha inválida."
@@ -56,15 +50,19 @@ async function processarEnvio(
   admin: ReturnType<typeof createAdminSupabaseClient>,
   onStorageUpload: (path: string) => void,
 ) {
-  const formData = await request.formData()
-  const titulo = String(formData.get("titulo") ?? "").trim()
-  const descricao = String(formData.get("descricao") ?? "").trim()
-  const tipo = String(formData.get("tipo") ?? "") as TipoMaterial
-  const trilha = String(formData.get("trilha") ?? "")
-  const categoria = String(formData.get("categoria") ?? "")
-  const publico = String(formData.get("publico") ?? "")
-  const url = String(formData.get("url") ?? "").trim()
-  const arquivo = formData.get("arquivo")
+  const body = await request.json().catch(() => null)
+  if (!body) return NextResponse.json({ ok: false, erro: "Dados inválidos." }, { status: 400 })
+
+  const titulo = String(body.titulo ?? "").trim()
+  const descricao = String(body.descricao ?? "").trim()
+  const tipo = String(body.tipo ?? "") as TipoMaterial
+  const trilha = String(body.trilha ?? "")
+  const categoria = String(body.categoria ?? "")
+  const publico = String(body.publico ?? "")
+  const url = String(body.url ?? "").trim()
+  // Caminho de um arquivo já enviado diretamente ao Storage via URL assinada
+  // (ver /api/materiais/upload-url) — o binário nunca passa por esta rota.
+  const storagePathEnviado = typeof body.storagePath === "string" ? body.storagePath.trim() : ""
 
   if (!titulo) return NextResponse.json({ ok: false, erro: "Informe o título do material." }, { status: 400 })
   if (!["pdf", "video", "jogo"].includes(tipo)) {
@@ -78,32 +76,27 @@ async function processarEnvio(
   let urlFinal: string | null = null
 
   if (tipo === "pdf") {
-    const usaArquivo = arquivo instanceof File && arquivo.size > 0
-
-    if (usaArquivo) {
-      const file = arquivo as File
-
-      if (file.type !== "application/pdf") {
-        return NextResponse.json({ ok: false, erro: "O arquivo enviado precisa ser um PDF." }, { status: 400 })
-      }
-      if (file.size > TAMANHO_MAXIMO_PDF) {
-        return NextResponse.json({ ok: false, erro: "O PDF excede o limite de 50MB." }, { status: 400 })
+    if (storagePathEnviado) {
+      if (!storagePathEnviado.startsWith(`${trilha}/${categoria}/`)) {
+        return NextResponse.json({ ok: false, erro: "Caminho de arquivo inválido." }, { status: 400 })
       }
 
-      const nomeUnico = `${trilha}/${categoria}/${Date.now()}_${sanitizarNomeArquivo(file.name)}`
-      const bytes = new Uint8Array(await file.arrayBuffer())
+      const ultimaBarra = storagePathEnviado.lastIndexOf("/")
+      const pasta = storagePathEnviado.slice(0, ultimaBarra)
+      const nomeArquivo = storagePathEnviado.slice(ultimaBarra + 1)
+      const { data: listagem, error: erroListagem } = await admin.storage
+        .from("materiais")
+        .list(pasta, { search: nomeArquivo })
 
-      const { data, error } = await admin.storage.from("materiais").upload(nomeUnico, bytes, {
-        contentType: "application/pdf",
-        cacheControl: "3600",
-        upsert: false,
-      })
-
-      if (error || !data?.path) {
-        return NextResponse.json({ ok: false, erro: "Não foi possível enviar o arquivo PDF." }, { status: 500 })
+      if (erroListagem || !listagem?.some((f) => f.name === nomeArquivo)) {
+        return NextResponse.json(
+          { ok: false, erro: "O arquivo enviado não foi encontrado. Tente enviar novamente." },
+          { status: 400 },
+        )
       }
-      storagePath = data.path
-      onStorageUpload(storagePath)
+
+      storagePath = storagePathEnviado
+      onStorageUpload(storagePathEnviado)
     } else if (url) {
       try {
         const parsed = new URL(url)

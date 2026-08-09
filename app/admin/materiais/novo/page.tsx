@@ -12,6 +12,7 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
 import { CATEGORIAS, PUBLICOS, TRILHAS, type PublicoSlug, type TipoMaterial } from "@/lib/catalog"
+import { createClient } from "@/lib/supabase/client"
 import { cn } from "@/lib/utils"
 
 const TAMANHO_MAXIMO_PDF = 50 * 1024 * 1024 // 50MB — deve casar com o limite da rota /api/materiais
@@ -68,21 +69,55 @@ export default function NovoMaterialPage() {
     try {
       setEnviando(true)
 
-      const formData = new FormData()
-      formData.set("titulo", titulo.trim())
-      formData.set("descricao", descricao.trim())
-      formData.set("tipo", tipo)
-      formData.set("trilha", trilha)
-      formData.set("categoria", categoria)
-      formData.set("publico", publico)
+      let storagePath: string | null = null
 
       if (tipo === "pdf" && modoPdf === "upload" && arquivoPdf) {
-        formData.set("arquivo", arquivoPdf)
-      } else {
-        formData.set("url", url.trim())
+        // Upload direto do navegador para o Storage via URL assinada — o arquivo
+        // nunca passa pela função serverless, evitando o limite de payload (413).
+        const resUrl = await fetch("/api/materiais/upload-url", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ trilha, categoria, nomeArquivo: arquivoPdf.name }),
+        })
+        const dadosUrl = await resUrl.json()
+        if (!resUrl.ok || !dadosUrl.ok) {
+          setErro(dadosUrl.erro ?? "Não foi possível preparar o upload do arquivo.")
+          return
+        }
+
+        const supabase = createClient()
+        const { error: erroUpload } = await supabase.storage
+          .from("materiais")
+          .uploadToSignedUrl(dadosUrl.path, dadosUrl.token, arquivoPdf, { contentType: "application/pdf" })
+
+        if (erroUpload) {
+          setErro("Não foi possível enviar o arquivo PDF. Tente novamente.")
+          return
+        }
+
+        storagePath = dadosUrl.path
       }
 
-      const res = await fetch("/api/materiais", { method: "POST", body: formData })
+      const corpo: Record<string, unknown> = {
+        titulo: titulo.trim(),
+        descricao: descricao.trim(),
+        tipo,
+        trilha,
+        categoria,
+        publico,
+      }
+
+      if (storagePath) {
+        corpo.storagePath = storagePath
+      } else {
+        corpo.url = url.trim()
+      }
+
+      const res = await fetch("/api/materiais", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(corpo),
+      })
       const data = await res.json()
 
       if (!res.ok || !data.ok) {
