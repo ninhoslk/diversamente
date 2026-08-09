@@ -1,21 +1,10 @@
 "use client"
 
-import {
-  CalendarCheck,
-  Check,
-  ExternalLink,
-  GraduationCap,
-  HeartHandshake,
-  MessagesSquare,
-  Presentation,
-  Wrench,
-} from "lucide-react"
-import { Button } from "@/components/ui/button"
+import { ExternalLink, GraduationCap, HeartHandshake, Presentation, Wrench } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
 import { PageShell } from "@/components/site/page-shell"
 import { useApp } from "@/lib/app-provider"
 
-const ETAPAS_ICONES = [MessagesSquare, CalendarCheck, GraduationCap, HeartHandshake]
 const CATEGORIA_ICONES: Record<string, typeof Presentation> = {
   Palestras: Presentation,
   Cursos: GraduationCap,
@@ -117,74 +106,6 @@ export default function MentoriaPage() {
                   ) : null}
                 </div>
               </CardContent>
-            </Card>
-          ))}
-        </div>
-      </section>
-
-      {/* COMO FUNCIONA A ASSESSORIA CONTÍNUA */}
-      <section className="mt-16">
-        <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">Como funciona a assessoria contínua</h2>
-        <p className="mt-2 max-w-2xl text-pretty leading-relaxed text-muted-foreground">
-          Para redes e escolas que buscam implementação de longo prazo, a assessoria segue quatro etapas.
-        </p>
-
-        <div className="mt-6 grid gap-5 md:grid-cols-2 lg:grid-cols-4">
-          {mentoria.etapas.map((etapa, index) => {
-            const Icone = ETAPAS_ICONES[index % ETAPAS_ICONES.length]
-            return (
-              <Card key={etapa.titulo} className="glass rounded-3xl border shadow-sm">
-                <CardContent className="flex flex-col gap-3 p-6">
-                  <span className="flex size-11 items-center justify-center rounded-2xl bg-accent">
-                    <Icone className="size-5 text-accent-foreground" aria-hidden="true" />
-                  </span>
-                  <h3 className="text-base font-semibold leading-snug">{etapa.titulo}</h3>
-                  <p className="text-sm leading-relaxed text-muted-foreground">{etapa.texto}</p>
-                </CardContent>
-              </Card>
-            )
-          })}
-        </div>
-      </section>
-
-      {/* FORMATOS DE ACOMPANHAMENTO / CTA */}
-      <section className="mt-16">
-        <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">Formatos de Acompanhamento</h2>
-        <div className="mt-6 grid gap-6 md:grid-cols-2">
-          {mentoria.planos.map((plano) => (
-            <Card
-              key={plano.nome}
-              className={
-                plano.destaque
-                  ? "rounded-3xl border-0 bg-gradient-to-br from-holo-pink via-holo-lilac to-holo-blue p-[2px] shadow-sm"
-                  : "glass rounded-3xl border shadow-sm"
-              }
-            >
-              <div
-                className={
-                  plano.destaque
-                    ? "flex h-full flex-col gap-5 rounded-3xl bg-card/90 p-7 backdrop-blur-sm"
-                    : "flex h-full flex-col gap-5 p-7"
-                }
-              >
-                <div className="flex flex-col gap-1">
-                  <h3 className="text-xl font-semibold">{plano.nome}</h3>
-                  <p className="text-sm text-muted-foreground">{plano.preco}</p>
-                </div>
-                <ul className="flex flex-col gap-2.5">
-                  {plano.itens.map((item) => (
-                    <li key={item} className="flex items-start gap-2 text-sm leading-relaxed">
-                      <Check className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden="true" />
-                      <span>{item}</span>
-                    </li>
-                  ))}
-                </ul>
-                <Button asChild className="mt-auto w-full rounded-full" variant={plano.destaque ? "default" : "outline"}>
-                  <a href="https://wa.me/5519992101212" target="_blank" rel="noopener noreferrer">
-                    Falar com a equipe
-                  </a>
-                </Button>
-              </div>
             </Card>
           ))}
         </div>
