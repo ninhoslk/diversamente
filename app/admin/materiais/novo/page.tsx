@@ -15,7 +15,7 @@ import { CATEGORIAS, PUBLICOS, TRILHAS, type PublicoSlug, type TipoMaterial } fr
 import { createClient } from "@/lib/supabase/client"
 import { cn } from "@/lib/utils"
 
-const TAMANHO_MAXIMO_PDF = 50 * 1024 * 1024 // 50MB — deve casar com o limite da rota /api/materiais
+const TAMANHO_MAXIMO_PDF = 150 * 1024 * 1024 // 150MB — deve casar com o file_size_limit do bucket "materiais" (supabase/schema.sql)
 
 const TIPOS_FORM: { slug: TipoMaterial; label: string; ajuda: string; Icon: typeof FileText }[] = [
   { slug: "pdf", label: "PDF", ajuda: "Leitura protegida no site, sem download", Icon: FileText },

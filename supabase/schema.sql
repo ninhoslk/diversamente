@@ -215,10 +215,10 @@ GRANT ALL ON public.site_config TO service_role;
 -- marca como privado — qualquer link antigo com getPublicUrl deixará
 -- de funcionar (o que é o comportamento esperado e desejado).
 INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
-VALUES ('materiais', 'materiais', false, 52428800, ARRAY['application/pdf'])
+VALUES ('materiais', 'materiais', false, 157286400, ARRAY['application/pdf'])
 ON CONFLICT (id) DO UPDATE SET
   public = false,
-  file_size_limit = 52428800,
+  file_size_limit = 157286400,
   allowed_mime_types = ARRAY['application/pdf'];
 
 -- Nenhuma política de storage.objects é criada para anon/authenticated:
