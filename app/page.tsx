@@ -27,8 +27,8 @@ const DESTAQUES = [
   },
   {
     icon: Sparkles,
-    titulo: "Mentoria",
-    texto: "Acompanhamento contínuo e formação para escolas e equipes que buscam excelência.",
+    titulo: "Formação",
+    texto: "Palestras, cursos, oficinas e assessoria contínua para escolas e equipes que buscam excelência.",
     href: "/mentoria",
   },
 ]

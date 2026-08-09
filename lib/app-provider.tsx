@@ -54,6 +54,22 @@ const AppContext = createContext<AppContextValue | null>(null)
 
 const CHAVE_SITE_CONFIG = "diversamente:site-config"
 
+/**
+ * Mescla a config vinda do Supabase com os padrões locais, seção por seção.
+ * O JSON salvo no banco pode ter sido gravado antes de um campo novo ser
+ * adicionado ao tipo SiteConfig (ex.: mentoria.categorias e
+ * mentoria.formadores) — sem isso, a página quebra ao iterar um campo que
+ * não existe no registro salvo anteriormente.
+ */
+function mesclarComPadrao(config: SiteConfig): SiteConfig {
+  return {
+    home: { ...CONFIG_PADRAO_SITE.home, ...config.home },
+    autores: { ...CONFIG_PADRAO_SITE.autores, ...config.autores },
+    quemSomos: { ...CONFIG_PADRAO_SITE.quemSomos, ...config.quemSomos },
+    mentoria: { ...CONFIG_PADRAO_SITE.mentoria, ...config.mentoria },
+  }
+}
+
 function linhaParaMaterial(row: Record<string, unknown>): Material {
   return {
     id: row.id as string,
@@ -136,11 +152,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
       const configSupabase = await fetchSupabaseSiteConfig()
       if (configSupabase && configSupabase.home) {
-        setSiteConfig(configSupabase)
+        setSiteConfig(mesclarComPadrao(configSupabase))
       } else {
         try {
           const salvo = localStorage.getItem(CHAVE_SITE_CONFIG)
-          if (salvo) setSiteConfig(JSON.parse(salvo))
+          if (salvo) setSiteConfig(mesclarComPadrao(JSON.parse(salvo)))
         } catch {}
       }
 
@@ -179,7 +195,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       .on("postgres_changes", { event: "*", schema: "public", table: "site_config" }, async () => {
         const configAtualizada = await fetchSupabaseSiteConfig()
         if (configAtualizada && configAtualizada.home) {
-          setSiteConfig(configAtualizada)
+          setSiteConfig(mesclarComPadrao(configAtualizada))
         }
       })
       .subscribe()

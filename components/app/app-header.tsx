@@ -84,7 +84,7 @@ export function AppHeader() {
                 )}
               >
                 <LibraryBig className="size-4" aria-hidden="true" />
-                Conteúdos
+                Material Didático
               </Link>
               <Link
                 href="/mural"
@@ -172,7 +172,7 @@ export function AppHeader() {
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => router.push("/conteudos")} className="rounded-xl cursor-pointer">
                 <LibraryBig className="size-4" aria-hidden="true" />
-                Biblioteca de Conteúdos
+                Biblioteca de Material Didático
               </DropdownMenuItem>
               {usuario?.papel === "admin" ? (
                 <>

@@ -13,7 +13,7 @@ const FAQ = [
   {
     pergunta: "Como acesso os materiais da minha turma?",
     resposta:
-      "Após entrar, vá em Conteúdos, escolha a trilha (Educação Infantil ou Fundamental I), a categoria da faixa etária e depois a aba do seu público: Criança/Estudante, Educador ou Família.",
+      "Após entrar, vá em Material Didático, escolha a trilha (Educação Infantil ou Fundamental I), a categoria da faixa etária e depois a aba do seu público: Criança/Estudante, Educador ou Família.",
   },
   {
     pergunta: "Os conteúdos são adaptados para cada público?",

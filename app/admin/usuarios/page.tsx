@@ -103,7 +103,7 @@ export default function AdminUsuariosPage() {
     <>
       <Breadcrumbs
         itens={[
-          { label: "Conteúdos", href: "/conteudos" },
+          { label: "Material Didático", href: "/conteudos" },
           { label: "Painel Admin", href: "/admin" },
           { label: "Gestão de Usuários & Categorias" },
         ]}

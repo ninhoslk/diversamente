@@ -55,7 +55,7 @@ export default function AdminMateriaisPage() {
     <>
       <Breadcrumbs
         itens={[
-          { label: "Conteúdos", href: "/conteudos" },
+          { label: "Material Didático", href: "/conteudos" },
           { label: "Painel Admin", href: "/admin" },
           { label: "Materiais" },
         ]}

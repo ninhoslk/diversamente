@@ -34,7 +34,7 @@ export default function ElementorAparenciaPage() {
   function onSalvar() {
     atualizarSiteConfig(configDraft)
     toast.success("Layout e conteúdos do site atualizados com sucesso!", {
-      description: "Todas as páginas (Home, Autores, Quem Somos e Mentoria) foram modificadas.",
+      description: "Todas as páginas (Home, Autores, Quem Somos e Formação) foram modificadas.",
     })
   }
 
@@ -48,7 +48,7 @@ export default function ElementorAparenciaPage() {
     <>
       <Breadcrumbs
         itens={[
-          { label: "Conteúdos", href: "/conteudos" },
+          { label: "Material Didático", href: "/conteudos" },
           { label: "Painel Admin", href: "/admin" },
           { label: "Personalizador Visual (Elementor)" },
         ]}
@@ -88,7 +88,7 @@ export default function ElementorAparenciaPage() {
           </TabsTrigger>
           <TabsTrigger value="mentoria" className="rounded-full gap-2 px-4 py-2">
             <GraduationCap className="size-4 text-primary" />
-            Mentoria
+            Formação
           </TabsTrigger>
         </TabsList>
 
@@ -492,11 +492,11 @@ export default function ElementorAparenciaPage() {
         <TabsContent value="mentoria" className="mt-6 flex flex-col gap-6">
           <Card className="glass rounded-3xl border-0">
             <CardHeader>
-              <CardTitle className="font-serif text-xl">Página de Mentoria & Planos</CardTitle>
+              <CardTitle className="font-serif text-xl">Página de Formação</CardTitle>
             </CardHeader>
             <CardContent className="flex flex-col gap-4">
               <div className="flex flex-col gap-2">
-                <Label htmlFor="m-titulo">Título da Mentoria</Label>
+                <Label htmlFor="m-titulo">Título da página</Label>
                 <Input
                   id="m-titulo"
                   value={configDraft.mentoria.titulo}
@@ -529,10 +529,153 @@ export default function ElementorAparenciaPage() {
 
           <Card className="glass rounded-3xl border-0">
             <CardHeader>
-              <CardTitle className="font-serif text-xl">Etapas do Processo</CardTitle>
-              <CardDescription>Os três passos exibidos logo abaixo do cabeçalho da página.</CardDescription>
+              <CardTitle className="font-serif text-xl">Categorias de Formação</CardTitle>
+              <CardDescription>Palestras, cursos, oficinas e orientação familiar exibidos em "O que oferecemos".</CardDescription>
             </CardHeader>
-            <CardContent className="grid gap-4 sm:grid-cols-3">
+            <CardContent className="flex flex-col gap-6">
+              {configDraft.mentoria.categorias.map((categoria, catIdx) => (
+                <div key={catIdx} className="flex flex-col gap-3 rounded-2xl bg-card/80 p-4 border">
+                  <Label className="font-bold text-sm text-primary">{categoria.nome}</Label>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <div className="flex flex-col gap-1.5">
+                      <Label className="text-[11px]">Duração</Label>
+                      <Input
+                        value={categoria.duracao}
+                        onChange={(e) => {
+                          const novas = [...configDraft.mentoria.categorias]
+                          novas[catIdx] = { ...novas[catIdx], duracao: e.target.value }
+                          setConfigDraft({ ...configDraft, mentoria: { ...configDraft.mentoria, categorias: novas } })
+                        }}
+                        className="rounded-xl bg-background text-xs"
+                      />
+                    </div>
+                    <div className="flex flex-col gap-1.5">
+                      <Label className="text-[11px]">Formato (opcional)</Label>
+                      <Input
+                        value={categoria.formato ?? ""}
+                        onChange={(e) => {
+                          const novas = [...configDraft.mentoria.categorias]
+                          novas[catIdx] = { ...novas[catIdx], formato: e.target.value }
+                          setConfigDraft({ ...configDraft, mentoria: { ...configDraft.mentoria, categorias: novas } })
+                        }}
+                        className="rounded-xl bg-background text-xs"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col gap-3">
+                    {categoria.programas.map((programa, progIdx) => (
+                      <div key={progIdx} className="flex flex-col gap-1.5 rounded-xl bg-background p-3 border border-border/60">
+                        <Label className="text-[11px]">Programa #{progIdx + 1}</Label>
+                        <Input
+                          value={programa.titulo}
+                          onChange={(e) => {
+                            const novas = [...configDraft.mentoria.categorias]
+                            const novosProgramas = [...novas[catIdx].programas]
+                            novosProgramas[progIdx] = { ...novosProgramas[progIdx], titulo: e.target.value }
+                            novas[catIdx] = { ...novas[catIdx], programas: novosProgramas }
+                            setConfigDraft({ ...configDraft, mentoria: { ...configDraft.mentoria, categorias: novas } })
+                          }}
+                          placeholder="Título do programa"
+                          className="rounded-lg bg-card text-xs"
+                        />
+                        <Label className="text-[11px] text-muted-foreground">Tópicos (um por linha)</Label>
+                        <Textarea
+                          rows={3}
+                          value={programa.topicos.join("\n")}
+                          onChange={(e) => {
+                            const novas = [...configDraft.mentoria.categorias]
+                            const novosProgramas = [...novas[catIdx].programas]
+                            novosProgramas[progIdx] = {
+                              ...novosProgramas[progIdx],
+                              topicos: e.target.value.split("\n"),
+                            }
+                            novas[catIdx] = { ...novas[catIdx], programas: novosProgramas }
+                            setConfigDraft({ ...configDraft, mentoria: { ...configDraft.mentoria, categorias: novas } })
+                          }}
+                          className="rounded-lg bg-card text-xs"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+
+          <Card className="glass rounded-3xl border-0">
+            <CardHeader>
+              <CardTitle className="font-serif text-xl flex items-center gap-2">
+                <Users className="size-5 text-primary" aria-hidden="true" />
+                Formadores e Autores
+              </CardTitle>
+              <CardDescription>As biografias exibidas na seção "Formadores e Autores" da página.</CardDescription>
+            </CardHeader>
+            <CardContent className="grid gap-4 sm:grid-cols-2">
+              {configDraft.mentoria.formadores.map((formador, idx) => (
+                <div key={idx} className="flex flex-col gap-1.5 rounded-2xl bg-card/80 p-4 border">
+                  <Label className="text-[11px]">Nome</Label>
+                  <Input
+                    value={formador.nome}
+                    onChange={(e) => {
+                      const novos = [...configDraft.mentoria.formadores]
+                      novos[idx] = { ...novos[idx], nome: e.target.value }
+                      setConfigDraft({ ...configDraft, mentoria: { ...configDraft.mentoria, formadores: novos } })
+                    }}
+                    className="rounded-xl bg-background"
+                  />
+                  <Label className="text-[11px]">Credencial</Label>
+                  <Input
+                    value={formador.credencial}
+                    onChange={(e) => {
+                      const novos = [...configDraft.mentoria.formadores]
+                      novos[idx] = { ...novos[idx], credencial: e.target.value }
+                      setConfigDraft({ ...configDraft, mentoria: { ...configDraft.mentoria, formadores: novos } })
+                    }}
+                    className="rounded-xl bg-background text-xs"
+                  />
+                  <Label className="text-[11px]">Biografia</Label>
+                  <Textarea
+                    rows={4}
+                    value={formador.bio}
+                    onChange={(e) => {
+                      const novos = [...configDraft.mentoria.formadores]
+                      novos[idx] = { ...novos[idx], bio: e.target.value }
+                      setConfigDraft({ ...configDraft, mentoria: { ...configDraft.mentoria, formadores: novos } })
+                    }}
+                    className="rounded-xl bg-background text-xs"
+                  />
+                  <Label className="text-[11px]">Currículo Lattes (opcional)</Label>
+                  <Input
+                    value={formador.lattes ?? ""}
+                    onChange={(e) => {
+                      const novos = [...configDraft.mentoria.formadores]
+                      novos[idx] = { ...novos[idx], lattes: e.target.value }
+                      setConfigDraft({ ...configDraft, mentoria: { ...configDraft.mentoria, formadores: novos } })
+                    }}
+                    className="rounded-xl bg-background text-xs"
+                  />
+                  <Label className="text-[11px]">Contato / rede social (opcional)</Label>
+                  <Input
+                    value={formador.contato ?? ""}
+                    onChange={(e) => {
+                      const novos = [...configDraft.mentoria.formadores]
+                      novos[idx] = { ...novos[idx], contato: e.target.value }
+                      setConfigDraft({ ...configDraft, mentoria: { ...configDraft.mentoria, formadores: novos } })
+                    }}
+                    className="rounded-xl bg-background text-xs"
+                  />
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+
+          <Card className="glass rounded-3xl border-0">
+            <CardHeader>
+              <CardTitle className="font-serif text-xl">Como Funciona a Assessoria</CardTitle>
+              <CardDescription>As quatro etapas exibidas em "Como funciona a assessoria contínua".</CardDescription>
+            </CardHeader>
+            <CardContent className="grid gap-4 sm:grid-cols-2">
               {configDraft.mentoria.etapas.map((etapa, idx) => (
                 <div key={idx} className="flex flex-col gap-2 rounded-2xl bg-card/80 p-4 border">
                   <Label className="font-bold text-xs text-primary">Etapa #{idx + 1}</Label>
@@ -572,7 +715,7 @@ export default function ElementorAparenciaPage() {
             <CardHeader>
               <CardTitle className="font-serif text-xl flex items-center gap-2">
                 <ListChecks className="size-5 text-primary" aria-hidden="true" />
-                Planos de Mentoria
+                Planos de Formação
               </CardTitle>
               <CardDescription>Os cartões de "Formatos de Acompanhamento" exibidos na página.</CardDescription>
             </CardHeader>

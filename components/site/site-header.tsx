@@ -12,7 +12,7 @@ const LINKS = [
   { href: "/", label: "Início" },
   { href: "/quem-somos", label: "Quem Somos" },
   { href: "/autores", label: "Autores" },
-  { href: "/mentoria", label: "Mentoria" },
+  { href: "/mentoria", label: "Formação" },
   { href: "/mural", label: "Mural" },
   { href: "/ajuda", label: "Ajuda" },
 ]

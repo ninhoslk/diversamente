@@ -36,7 +36,7 @@ export default function ConteudosPage() {
             </Badge>
           ) : null}
         </div>
-        <h1 className="text-pretty text-3xl font-bold tracking-tight sm:text-4xl">Trilhas de Conteúdo</h1>
+        <h1 className="text-pretty text-3xl font-bold tracking-tight sm:text-4xl">Material Didático</h1>
         <p className="max-w-2xl text-pretty leading-relaxed text-muted-foreground">
           Navegue pelas pastas para encontrar PDFs, vídeos e jogos organizados especificamente para a sua sala ou perfil.
         </p>

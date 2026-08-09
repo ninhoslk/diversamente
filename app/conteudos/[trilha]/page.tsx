@@ -22,7 +22,7 @@ export default function TrilhaPage({ params }: { params: Promise<{ trilha: strin
 
   return (
     <div>
-      <Breadcrumbs itens={[{ label: "Conteúdos", href: "/conteudos" }, { label: trilha.nome }]} />
+      <Breadcrumbs itens={[{ label: "Material Didático", href: "/conteudos" }, { label: trilha.nome }]} />
 
       <header className="flex flex-col gap-3">
         <h1 className="text-pretty text-3xl font-bold tracking-tight sm:text-4xl">{trilha.nome}</h1>

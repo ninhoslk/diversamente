@@ -49,7 +49,7 @@ export default function AdminPage() {
 
   return (
     <>
-      <Breadcrumbs itens={[{ label: "Conteúdos", href: "/conteudos" }, { label: "Painel Admin" }]} />
+      <Breadcrumbs itens={[{ label: "Material Didático", href: "/conteudos" }, { label: "Painel Admin" }]} />
 
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div className="max-w-xl">

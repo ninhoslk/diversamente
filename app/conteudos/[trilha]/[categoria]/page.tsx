@@ -64,7 +64,7 @@ export default function CategoriaPage({
       <div className="pb-8">
         <Breadcrumbs
           itens={[
-            { label: "Conteúdos", href: "/conteudos" },
+            { label: "Material Didático", href: "/conteudos" },
             { label: trilha.nome, href: `/conteudos/${trilhaSlug}` },
             { label: categoria.nome },
           ]}
@@ -84,7 +84,7 @@ export default function CategoriaPage({
     <div className="pb-8">
       <Breadcrumbs
         itens={[
-          { label: "Conteúdos", href: "/conteudos" },
+          { label: "Material Didático", href: "/conteudos" },
           { label: trilha.nome, href: `/conteudos/${trilhaSlug}` },
           { label: categoria.nome },
         ]}

@@ -26,7 +26,7 @@ export function SiteFooter() {
               Autores
             </Link>
             <Link href="/mentoria" className="transition-colors hover:text-foreground">
-              Mentoria
+              Formação
             </Link>
             <Link href="/mural" className="transition-colors hover:text-foreground">
               Mural
