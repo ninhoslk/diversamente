@@ -9,7 +9,7 @@ function sanitizarNomeArquivo(nome: string) {
   return nome.replace(/[^a-zA-Z0-9.\-_]/g, "_").slice(-140)
 }
 
-function validarDestino(trilha: string, categoria: string, publico: string) {
+export function validarDestino(trilha: string, categoria: string, publico: string) {
   const trilhaValida = TRILHAS.some((t) => t.slug === trilha)
   if (!trilhaValida) return "Trilha inválida."
 

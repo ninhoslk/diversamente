@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { useMemo, useState } from "react"
-import { AlertTriangle, PlusCircle, Search, Trash2 } from "lucide-react"
+import { AlertTriangle, Pencil, PlusCircle, Search, Trash2 } from "lucide-react"
 import { toast } from "sonner"
 import { Breadcrumbs } from "@/components/app/breadcrumbs"
 import { Badge } from "@/components/ui/badge"
@@ -174,15 +174,28 @@ export default function AdminMateriaisPage() {
                           {m.criadoEm.split("-").reverse().join("/")}
                         </TableCell>
                         <TableCell className="text-right">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="rounded-full text-destructive hover:bg-destructive/10"
-                            onClick={() => setMaterialParaRemover({ id: m.id, titulo: m.titulo })}
-                          >
-                            <Trash2 className="size-4" aria-hidden="true" />
-                            <span className="sr-only">Remover {m.titulo}</span>
-                          </Button>
+                          <div className="flex items-center justify-end gap-1">
+                            <Button
+                              asChild
+                              variant="ghost"
+                              size="icon"
+                              className="rounded-full"
+                            >
+                              <Link href={`/admin/materiais/${m.id}/editar`}>
+                                <Pencil className="size-4" aria-hidden="true" />
+                                <span className="sr-only">Editar {m.titulo}</span>
+                              </Link>
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="rounded-full text-destructive hover:bg-destructive/10"
+                              onClick={() => setMaterialParaRemover({ id: m.id, titulo: m.titulo })}
+                            >
+                              <Trash2 className="size-4" aria-hidden="true" />
+                              <span className="sr-only">Remover {m.titulo}</span>
+                            </Button>
+                          </div>
                         </TableCell>
                       </TableRow>
                     )

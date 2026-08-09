@@ -41,6 +41,10 @@ type AppContextValue = {
   erroMateriais: string | null
   recarregarMateriais: () => Promise<void>
   removerMaterial: (id: string) => Promise<{ ok: boolean; erro?: string }>
+  atualizarMaterial: (
+    id: string,
+    dados: { titulo: string; descricao: string; trilha: string; categoria: string; publico: string; url?: string },
+  ) => Promise<{ ok: boolean; erro?: string }>
   siteConfig: SiteConfig
   atualizarSiteConfig: (novaConfig: SiteConfig) => void
   restaurarSiteConfig: () => void
@@ -271,6 +275,27 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }
   }, [])
 
+  const atualizarMaterial = useCallback(
+    async (
+      id: string,
+      dados: { titulo: string; descricao: string; trilha: string; categoria: string; publico: string; url?: string },
+    ) => {
+      try {
+        const res = await fetch(`/api/materiais/${id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(dados),
+        })
+        const data = await res.json()
+        if (!res.ok || !data.ok) return { ok: false, erro: data.erro ?? "Erro ao atualizar material." }
+        return { ok: true }
+      } catch {
+        return { ok: false, erro: "Erro de conexão ao atualizar material." }
+      }
+    },
+    [],
+  )
+
   const atualizarSiteConfig = useCallback((novaConfig: SiteConfig) => {
     setSiteConfig(novaConfig)
     saveSupabaseSiteConfig(novaConfig).catch(() => {})
@@ -305,6 +330,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       erroMateriais,
       recarregarMateriais,
       removerMaterial,
+      atualizarMaterial,
       siteConfig,
       atualizarSiteConfig,
       restaurarSiteConfig,
@@ -323,6 +349,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       erroMateriais,
       recarregarMateriais,
       removerMaterial,
+      atualizarMaterial,
       siteConfig,
       atualizarSiteConfig,
       restaurarSiteConfig,
