@@ -1,7 +1,21 @@
 "use client"
 
 import { useState } from "react"
-import { Palette, RefreshCw, Save, Sparkles, Layout, FileText, Users, GraduationCap, Image as ImageIcon } from "lucide-react"
+import {
+  Palette,
+  RefreshCw,
+  Save,
+  Sparkles,
+  Layout,
+  FileText,
+  Users,
+  GraduationCap,
+  Image as ImageIcon,
+  BookOpen,
+  MessageSquareQuote,
+  ListChecks,
+  Star,
+} from "lucide-react"
 import { toast } from "sonner"
 import { Breadcrumbs } from "@/components/app/breadcrumbs"
 import { Button } from "@/components/ui/button"
@@ -307,6 +321,47 @@ export default function ElementorAparenciaPage() {
               ))}
             </CardContent>
           </Card>
+
+          <Card className="glass rounded-3xl border-0">
+            <CardHeader>
+              <CardTitle className="font-serif text-xl flex items-center gap-2">
+                <MessageSquareQuote className="size-5 text-primary" aria-hidden="true" />
+                Seção Final (Chamada para Ação)
+              </CardTitle>
+              <CardDescription>Bloco exibido ao final da página de Autores, convidando novos colaboradores.</CardDescription>
+            </CardHeader>
+            <CardContent className="flex flex-col gap-4">
+              <div className="flex flex-col gap-2">
+                <Label htmlFor="a-final-titulo">Título</Label>
+                <Input
+                  id="a-final-titulo"
+                  value={configDraft.autores.secaoFinalTitulo}
+                  onChange={(e) =>
+                    setConfigDraft({
+                      ...configDraft,
+                      autores: { ...configDraft.autores, secaoFinalTitulo: e.target.value },
+                    })
+                  }
+                  className="rounded-xl bg-card"
+                />
+              </div>
+              <div className="flex flex-col gap-2">
+                <Label htmlFor="a-final-texto">Texto</Label>
+                <Textarea
+                  id="a-final-texto"
+                  rows={3}
+                  value={configDraft.autores.secaoFinalTexto}
+                  onChange={(e) =>
+                    setConfigDraft({
+                      ...configDraft,
+                      autores: { ...configDraft.autores, secaoFinalTexto: e.target.value },
+                    })
+                  }
+                  className="rounded-xl bg-card"
+                />
+              </div>
+            </CardContent>
+          </Card>
         </TabsContent>
 
         {/* TAB QUEM SOMOS */}
@@ -350,24 +405,82 @@ export default function ElementorAparenciaPage() {
 
           <Card className="glass rounded-3xl border-0">
             <CardHeader>
-              <CardTitle className="font-serif text-xl">Pilares & História</CardTitle>
+              <CardTitle className="font-serif text-xl">Pilares</CardTitle>
+              <CardDescription>Os quatro cartões exibidos logo abaixo do cabeçalho da página.</CardDescription>
             </CardHeader>
             <CardContent className="grid gap-4 sm:grid-cols-2">
               {configDraft.quemSomos.pilares.map((pilar, idx) => (
                 <div key={idx} className="flex flex-col gap-2 rounded-2xl bg-card/80 p-4 border">
-                  <Label className="font-bold text-xs text-primary">{pilar.titulo}</Label>
+                  <Input
+                    value={pilar.titulo}
+                    onChange={(e) => {
+                      const novos = [...configDraft.quemSomos.pilares]
+                      novos[idx] = { ...novos[idx], titulo: e.target.value }
+                      setConfigDraft({
+                        ...configDraft,
+                        quemSomos: { ...configDraft.quemSomos, pilares: novos },
+                      })
+                    }}
+                    placeholder="Título do pilar"
+                    className="rounded-xl bg-background font-semibold text-sm"
+                  />
                   <Textarea
                     rows={3}
                     value={pilar.texto}
                     onChange={(e) => {
                       const novos = [...configDraft.quemSomos.pilares]
-                      novos[idx].texto = e.target.value
+                      novos[idx] = { ...novos[idx], texto: e.target.value }
                       setConfigDraft({
                         ...configDraft,
                         quemSomos: { ...configDraft.quemSomos, pilares: novos },
                       })
                     }}
                     className="rounded-xl bg-background text-xs"
+                  />
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+
+          <Card className="glass rounded-3xl border-0">
+            <CardHeader>
+              <CardTitle className="font-serif text-xl flex items-center gap-2">
+                <BookOpen className="size-5 text-primary" aria-hidden="true" />
+                Nossa História
+              </CardTitle>
+              <CardDescription>Seção institucional exibida ao final da página "Quem Somos".</CardDescription>
+            </CardHeader>
+            <CardContent className="flex flex-col gap-4">
+              <div className="flex flex-col gap-2">
+                <Label htmlFor="q-historia-titulo">Título da seção</Label>
+                <Input
+                  id="q-historia-titulo"
+                  value={configDraft.quemSomos.historiaTitulo}
+                  onChange={(e) =>
+                    setConfigDraft({
+                      ...configDraft,
+                      quemSomos: { ...configDraft.quemSomos, historiaTitulo: e.target.value },
+                    })
+                  }
+                  className="rounded-xl bg-card"
+                />
+              </div>
+
+              {configDraft.quemSomos.historiaParagrafos.map((paragrafo, idx) => (
+                <div key={idx} className="flex flex-col gap-2">
+                  <Label className="text-[11px] text-muted-foreground">Parágrafo {idx + 1}</Label>
+                  <Textarea
+                    rows={3}
+                    value={paragrafo}
+                    onChange={(e) => {
+                      const novos = [...configDraft.quemSomos.historiaParagrafos]
+                      novos[idx] = e.target.value
+                      setConfigDraft({
+                        ...configDraft,
+                        quemSomos: { ...configDraft.quemSomos, historiaParagrafos: novos },
+                      })
+                    }}
+                    className="rounded-xl bg-card"
                   />
                 </div>
               ))}
@@ -411,6 +524,139 @@ export default function ElementorAparenciaPage() {
                   className="rounded-xl bg-card"
                 />
               </div>
+            </CardContent>
+          </Card>
+
+          <Card className="glass rounded-3xl border-0">
+            <CardHeader>
+              <CardTitle className="font-serif text-xl">Etapas do Processo</CardTitle>
+              <CardDescription>Os três passos exibidos logo abaixo do cabeçalho da página.</CardDescription>
+            </CardHeader>
+            <CardContent className="grid gap-4 sm:grid-cols-3">
+              {configDraft.mentoria.etapas.map((etapa, idx) => (
+                <div key={idx} className="flex flex-col gap-2 rounded-2xl bg-card/80 p-4 border">
+                  <Label className="font-bold text-xs text-primary">Etapa #{idx + 1}</Label>
+                  <Input
+                    value={etapa.titulo}
+                    onChange={(e) => {
+                      const novas = [...configDraft.mentoria.etapas]
+                      novas[idx] = { ...novas[idx], titulo: e.target.value }
+                      setConfigDraft({
+                        ...configDraft,
+                        mentoria: { ...configDraft.mentoria, etapas: novas },
+                      })
+                    }}
+                    placeholder="Título da etapa"
+                    className="rounded-xl bg-background"
+                  />
+                  <Textarea
+                    rows={3}
+                    value={etapa.texto}
+                    onChange={(e) => {
+                      const novas = [...configDraft.mentoria.etapas]
+                      novas[idx] = { ...novas[idx], texto: e.target.value }
+                      setConfigDraft({
+                        ...configDraft,
+                        mentoria: { ...configDraft.mentoria, etapas: novas },
+                      })
+                    }}
+                    placeholder="Descrição da etapa"
+                    className="rounded-xl bg-background text-xs"
+                  />
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+
+          <Card className="glass rounded-3xl border-0">
+            <CardHeader>
+              <CardTitle className="font-serif text-xl flex items-center gap-2">
+                <ListChecks className="size-5 text-primary" aria-hidden="true" />
+                Planos de Mentoria
+              </CardTitle>
+              <CardDescription>Os cartões de "Formatos de Acompanhamento" exibidos na página.</CardDescription>
+            </CardHeader>
+            <CardContent className="grid gap-4 sm:grid-cols-2">
+              {configDraft.mentoria.planos.map((plano, idx) => (
+                <div key={idx} className="flex flex-col gap-3 rounded-2xl bg-card/80 p-4 border">
+                  <div className="flex items-center justify-between gap-2">
+                    <Label className="font-bold text-xs text-primary">Plano #{idx + 1}</Label>
+                    <button
+                      type="button"
+                      aria-pressed={plano.destaque}
+                      onClick={() => {
+                        const novos = [...configDraft.mentoria.planos]
+                        novos[idx] = { ...novos[idx], destaque: !novos[idx].destaque }
+                        setConfigDraft({
+                          ...configDraft,
+                          mentoria: { ...configDraft.mentoria, planos: novos },
+                        })
+                      }}
+                      className={`flex items-center gap-1 rounded-full border px-2.5 py-1 text-[11px] font-medium transition-colors ${
+                        plano.destaque
+                          ? "border-primary bg-primary/10 text-primary"
+                          : "border-border text-muted-foreground hover:border-primary/40"
+                      }`}
+                    >
+                      <Star className="size-3" aria-hidden="true" fill={plano.destaque ? "currentColor" : "none"} />
+                      Destaque
+                    </button>
+                  </div>
+
+                  <div className="flex flex-col gap-1.5">
+                    <Label className="text-[11px]">Nome do plano</Label>
+                    <Input
+                      value={plano.nome}
+                      onChange={(e) => {
+                        const novos = [...configDraft.mentoria.planos]
+                        novos[idx] = { ...novos[idx], nome: e.target.value }
+                        setConfigDraft({
+                          ...configDraft,
+                          mentoria: { ...configDraft.mentoria, planos: novos },
+                        })
+                      }}
+                      className="rounded-xl bg-background"
+                    />
+                  </div>
+
+                  <div className="flex flex-col gap-1.5">
+                    <Label className="text-[11px]">Preço / chamada</Label>
+                    <Input
+                      value={plano.preco}
+                      onChange={(e) => {
+                        const novos = [...configDraft.mentoria.planos]
+                        novos[idx] = { ...novos[idx], preco: e.target.value }
+                        setConfigDraft({
+                          ...configDraft,
+                          mentoria: { ...configDraft.mentoria, planos: novos },
+                        })
+                      }}
+                      className="rounded-xl bg-background"
+                    />
+                  </div>
+
+                  <div className="flex flex-col gap-1.5">
+                    <Label className="text-[11px]">Itens inclusos</Label>
+                    {plano.itens.map((item, itemIdx) => (
+                      <Input
+                        key={itemIdx}
+                        value={item}
+                        onChange={(e) => {
+                          const novos = [...configDraft.mentoria.planos]
+                          const novosItens = [...novos[idx].itens]
+                          novosItens[itemIdx] = e.target.value
+                          novos[idx] = { ...novos[idx], itens: novosItens }
+                          setConfigDraft({
+                            ...configDraft,
+                            mentoria: { ...configDraft.mentoria, planos: novos },
+                          })
+                        }}
+                        className="rounded-xl bg-background text-xs"
+                      />
+                    ))}
+                  </div>
+                </div>
+              ))}
             </CardContent>
           </Card>
         </TabsContent>

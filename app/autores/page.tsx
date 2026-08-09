@@ -44,7 +44,11 @@ export default function AutoresPage() {
                 <img
                   src={autor.foto}
                   alt={`Retrato de ${autor.nome}`}
-                  loading="eager"
+                  loading={index < 3 ? "eager" : "lazy"}
+                  // As primeiras fotos (acima da dobra na maioria das telas) recebem
+                  // prioridade alta de rede para carregar o quanto antes; o resto
+                  // fica com carregamento tardio (lazy) para não competir com elas.
+                  fetchPriority={index < 3 ? "high" : "auto"}
                   decoding="async"
                   className="h-full w-full object-cover object-top transition-transform duration-500 group-hover:scale-105"
                 />

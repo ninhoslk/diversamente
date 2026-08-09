@@ -206,6 +206,16 @@ CREATE POLICY "site_config_write" ON public.site_config
 GRANT SELECT ON public.site_config TO anon, authenticated;
 GRANT ALL ON public.site_config TO service_role;
 
+-- Garante que mudanças em site_config cheguem via Realtime (sincronização entre
+-- abas/usuários) — assim, edições feitas no Elementor aparecem para todos os
+-- visitantes na hora, sem precisar recarregar a página.
+DO $$
+BEGIN
+  ALTER PUBLICATION supabase_realtime ADD TABLE public.site_config;
+EXCEPTION WHEN duplicate_object THEN
+  NULL; -- já estava incluída
+END $$;
+
 
 -- ---------------------------------------------------
 -- 4. BUCKET PRIVADO PARA OS ARQUIVOS DE PDF

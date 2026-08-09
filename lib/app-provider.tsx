@@ -169,6 +169,26 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }
   }, [supabase, carregarPerfil])
 
+  // Assina mudanças na aparência do site (Elementor). A leitura é pública, então
+  // esta assinatura roda para todo mundo — visitante ou logado — e não depende
+  // de "usuario", garantindo que edições do admin apareçam em tempo real para
+  // qualquer pessoa com o site aberto, sem precisar recarregar a página.
+  useEffect(() => {
+    const canal = supabase
+      .channel("site_config_realtime")
+      .on("postgres_changes", { event: "*", schema: "public", table: "site_config" }, async () => {
+        const configAtualizada = await fetchSupabaseSiteConfig()
+        if (configAtualizada && configAtualizada.home) {
+          setSiteConfig(configAtualizada)
+        }
+      })
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(canal)
+    }
+  }, [supabase])
+
   // Carrega materiais assim que há um usuário logado (RLS exige autenticação) e assina mudanças em tempo real.
   useEffect(() => {
     if (!usuario) {
