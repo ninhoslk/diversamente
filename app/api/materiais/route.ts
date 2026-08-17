@@ -65,8 +65,17 @@ async function processarEnvio(
   const storagePathEnviado = typeof body.storagePath === "string" ? body.storagePath.trim() : ""
 
   if (!titulo) return NextResponse.json({ ok: false, erro: "Informe o título do material." }, { status: 400 })
-  if (!["pdf", "video", "jogo"].includes(tipo)) {
+  if (!["pdf", "video", "jogo", "manual", "projeto"].includes(tipo)) {
     return NextResponse.json({ ok: false, erro: "Tipo de material inválido." }, { status: 400 })
+  }
+  // Manual/Projeto são exclusivos da trilha de Educação Ambiental (ver
+  // Trilha.tiposExtras em lib/catalog.ts) — evita criar material "órfão" que
+  // nunca aparece em nenhuma aba de tipo em outra trilha.
+  if ((tipo === "manual" || tipo === "projeto") && trilha !== "educacao-ambiental") {
+    return NextResponse.json(
+      { ok: false, erro: "Manuais e Projetos só podem ser publicados na trilha de Educação Ambiental." },
+      { status: 400 },
+    )
   }
 
   const erroDestino = validarDestino(trilha, categoria, publico)
@@ -75,7 +84,7 @@ async function processarEnvio(
   let storagePath: string | null = null
   let urlFinal: string | null = null
 
-  if (tipo === "pdf") {
+  if (tipo === "pdf" || tipo === "manual" || tipo === "projeto") {
     if (storagePathEnviado) {
       if (!storagePathEnviado.startsWith(`${trilha}/${categoria}/`)) {
         return NextResponse.json({ ok: false, erro: "Caminho de arquivo inválido." }, { status: 400 })

@@ -2,13 +2,14 @@
 
 import { use, useMemo, useState } from "react"
 import { notFound } from "next/navigation"
-import { AlertTriangle, FileText, Gamepad2, Inbox, PlayCircle, Lock } from "lucide-react"
+import { AlertTriangle, BookOpen, FileText, FolderKanban, Gamepad2, Inbox, PlayCircle, Lock } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Breadcrumbs } from "@/components/app/breadcrumbs"
 import { MaterialDialog } from "@/components/app/material-dialog"
 import {
+  CATEGORIA_TODOS_OS_ANOS_SLUG,
   getCategoria,
   getTrilha,
   PUBLICOS,
@@ -24,6 +25,8 @@ const ICONES: Record<TipoMaterial, typeof FileText> = {
   pdf: FileText,
   video: PlayCircle,
   jogo: Gamepad2,
+  manual: BookOpen,
+  projeto: FolderKanban,
 }
 
 export default function CategoriaPage({
@@ -44,10 +47,23 @@ export default function CategoriaPage({
     [usuario, categoria],
   )
 
+  // Além dos materiais desta categoria/ano específico, inclui os publicados na
+  // categoria de broadcast "todos os anos" (só existe na Educação Ambiental).
   const doGrupo = useMemo(
-    () => materiais.filter((m) => m.trilha === trilhaSlug && m.categoria === categoriaSlug),
+    () =>
+      materiais.filter(
+        (m) =>
+          m.trilha === trilhaSlug &&
+          (m.categoria === categoriaSlug || m.categoria === CATEGORIA_TODOS_OS_ANOS_SLUG),
+      ),
     [materiais, trilhaSlug, categoriaSlug],
   )
+
+  const tiposDisponiveis = useMemo(() => {
+    const base: TipoMaterial[] = ["pdf", "video", "jogo"]
+    const extras = trilha.tiposExtras ?? []
+    return TIPOS.filter((t) => base.includes(t.slug) || extras.includes(t.slug))
+  }, [trilha])
 
   const publicoInicial = publicosPermitidos.length > 0 ? publicosPermitidos[0] : categoria.publicos[0]
 
@@ -140,9 +156,9 @@ export default function CategoriaPage({
         {publicosPermitidos.map((publico) => (
           <TabsContent key={publico} value={publico} className="mt-6">
             {/* Filtro por tipo de material */}
-            <Tabs defaultValue="pdf">
+            <Tabs defaultValue={tiposDisponiveis[0]?.slug ?? "pdf"}>
               <TabsList className="rounded-full bg-secondary/70 max-w-full overflow-x-auto flex-nowrap sm:flex-wrap">
-                {TIPOS.map((tipo) => {
+                {tiposDisponiveis.map((tipo) => {
                   const qtd = doGrupo.filter((m) => m.publico === publico && m.tipo === tipo.slug).length
                   return (
                     <TabsTrigger key={tipo.slug} value={tipo.slug} className="shrink-0 gap-1.5 rounded-full text-xs sm:text-sm">
@@ -153,7 +169,7 @@ export default function CategoriaPage({
                 })}
               </TabsList>
 
-              {TIPOS.map((tipo) => {
+              {tiposDisponiveis.map((tipo) => {
                 const lista = doGrupo.filter((m) => m.publico === publico && m.tipo === tipo.slug)
                 const Icone = ICONES[tipo.slug]
 

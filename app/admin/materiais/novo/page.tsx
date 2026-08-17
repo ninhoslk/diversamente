@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation"
 import { useMemo, useState } from "react"
-import { FileText, Gamepad2, Loader2, UploadCloud, Video, ShieldCheck } from "lucide-react"
+import { BookOpen, FileText, FolderKanban, Gamepad2, Loader2, UploadCloud, Video, ShieldCheck } from "lucide-react"
 import { toast } from "sonner"
 import { Breadcrumbs } from "@/components/app/breadcrumbs"
 import { Button } from "@/components/ui/button"
@@ -17,11 +17,21 @@ import { cn } from "@/lib/utils"
 
 const TAMANHO_MAXIMO_PDF = 150 * 1024 * 1024 // 150MB — deve casar com o file_size_limit do bucket "materiais" (supabase/schema.sql)
 
-const TIPOS_FORM: { slug: TipoMaterial; label: string; ajuda: string; Icon: typeof FileText }[] = [
+// Tipos que usam o mesmo fluxo de PDF (upload direto ou link) — manuais e
+// projetos da Educação Ambiental são publicados como PDF, só ficam em abas
+// separadas de "PDF's" na navegação.
+const TIPOS_COMO_PDF: TipoMaterial[] = ["pdf", "manual", "projeto"]
+
+const TIPOS_FORM_BASE: { slug: TipoMaterial; label: string; ajuda: string; Icon: typeof FileText }[] = [
   { slug: "pdf", label: "PDF", ajuda: "Leitura protegida no site, sem download", Icon: FileText },
   { slug: "video", label: "Vídeo", ajuda: "YouTube, Vimeo ou arquivo de vídeo", Icon: Video },
   { slug: "jogo", label: "Jogo", ajuda: "Link para atividade interativa", Icon: Gamepad2 },
 ]
+
+const TIPOS_FORM_EXTRAS: Record<string, { slug: TipoMaterial; label: string; ajuda: string; Icon: typeof FileText }> = {
+  manual: { slug: "manual", label: "Manual", ajuda: "PDF protegido, aba separada de 'Manuais'", Icon: BookOpen },
+  projeto: { slug: "projeto", label: "Projeto", ajuda: "PDF protegido, aba separada de 'Projetos'", Icon: FolderKanban },
+}
 
 export default function NovoMaterialPage() {
   const router = useRouter()
@@ -43,11 +53,22 @@ export default function NovoMaterialPage() {
     () => categoriasDaTrilha.find((c) => c.slug === categoria)?.publicos ?? [],
     [categoriasDaTrilha, categoria],
   )
+  const tiposFormDisponiveis = useMemo(() => {
+    const extras = TRILHAS.find((t) => t.slug === trilha)?.tiposExtras ?? []
+    return [...TIPOS_FORM_BASE, ...extras.map((slug) => TIPOS_FORM_EXTRAS[slug]).filter(Boolean)]
+  }, [trilha])
 
   function onTrilhaChange(valor: string | null) {
-    setTrilha(valor ?? TRILHAS[0].slug)
+    const novaTrilha = valor ?? TRILHAS[0].slug
+    setTrilha(novaTrilha)
     setCategoria("")
     setPublico("")
+    // Se o tipo selecionado (ex.: Manual/Projeto) só existe na trilha anterior,
+    // volta para PDF em vez de deixar o formulário num estado inválido.
+    const extrasDaNovaTrilha = TRILHAS.find((t) => t.slug === novaTrilha)?.tiposExtras ?? []
+    if (tipo !== "pdf" && tipo !== "video" && tipo !== "jogo" && !extrasDaNovaTrilha.includes(tipo)) {
+      setTipo("pdf")
+    }
   }
 
   function onCategoriaChange(valor: string | null) {
@@ -62,16 +83,16 @@ export default function NovoMaterialPage() {
     if (!titulo.trim()) return setErro("Informe o título do material.")
     if (!categoria) return setErro("Escolha a categoria de destino.")
     if (!publico) return setErro("Escolha o público que verá este material.")
-    if (tipo === "pdf" && modoPdf === "upload" && !arquivoPdf) return setErro("Selecione o arquivo PDF para upload.")
-    if (tipo === "pdf" && modoPdf === "link" && !url.trim()) return setErro("Informe o link do PDF.")
-    if (tipo !== "pdf" && !url.trim()) return setErro("Informe o link do material.")
+    if (TIPOS_COMO_PDF.includes(tipo) && modoPdf === "upload" && !arquivoPdf) return setErro("Selecione o arquivo PDF para upload.")
+    if (TIPOS_COMO_PDF.includes(tipo) && modoPdf === "link" && !url.trim()) return setErro("Informe o link do PDF.")
+    if (!TIPOS_COMO_PDF.includes(tipo) && !url.trim()) return setErro("Informe o link do material.")
 
     try {
       setEnviando(true)
 
       let storagePath: string | null = null
 
-      if (tipo === "pdf" && modoPdf === "upload" && arquivoPdf) {
+      if (TIPOS_COMO_PDF.includes(tipo) && modoPdf === "upload" && arquivoPdf) {
         // Upload direto do navegador para o Storage via URL assinada — o arquivo
         // nunca passa pela função serverless, evitando o limite de payload (413).
         const resUrl = await fetch("/api/materiais/upload-url", {
@@ -149,7 +170,8 @@ export default function NovoMaterialPage() {
       <div className="max-w-xl">
         <h1 className="font-serif text-3xl font-semibold tracking-tight text-balance sm:text-4xl">Novo material</h1>
         <p className="mt-2 leading-relaxed text-muted-foreground text-pretty">
-          Faça o upload do PDF ou cadastre links de vídeos e jogos para a biblioteca.
+          Faça o upload do PDF ou cadastre links de vídeos e jogos para a biblioteca. Na Educação Ambiental também é
+          possível publicar Manuais e Projetos.
         </p>
       </div>
 
@@ -163,7 +185,7 @@ export default function NovoMaterialPage() {
             <fieldset className="flex flex-col gap-3">
               <legend className="mb-1 text-sm font-medium">Tipo de material</legend>
               <div className="grid gap-3 sm:grid-cols-3">
-                {TIPOS_FORM.map(({ slug, label, ajuda, Icon }) => (
+                {tiposFormDisponiveis.map(({ slug, label, ajuda, Icon }) => (
                   <button
                     key={slug}
                     type="button"
@@ -207,7 +229,7 @@ export default function NovoMaterialPage() {
               />
             </div>
 
-            {tipo === "pdf" ? (
+            {TIPOS_COMO_PDF.includes(tipo) ? (
               <div className="flex flex-col gap-3">
                 <div className="flex flex-col gap-2">
                   <legend className="text-sm font-medium">Origem do PDF</legend>

@@ -18,5 +18,8 @@ node_modules
 # Artefatos locais do Graphify (gerados sob demanda, não fazem parte do app)
 graphify-out/
 
+# Backups locais do banco (podem conter dados pessoais de usuários) — nunca versionar
+backups/
+
 # Configurações locais do Claude Code (específicas desta máquina)
 .claude/settings.local.json

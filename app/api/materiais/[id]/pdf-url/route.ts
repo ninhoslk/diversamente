@@ -22,7 +22,8 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
     return NextResponse.json({ ok: false, erro: "Material não encontrado." }, { status: 404 })
   }
 
-  if (material.tipo !== "pdf" || !material.storage_path) {
+  const tiposComoPdf = ["pdf", "manual", "projeto"]
+  if (!tiposComoPdf.includes(material.tipo) || !material.storage_path) {
     return NextResponse.json({ ok: false, erro: "Este material não possui arquivo de PDF." }, { status: 400 })
   }
 

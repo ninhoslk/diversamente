@@ -1,4 +1,4 @@
-export type TipoMaterial = "pdf" | "video" | "jogo"
+export type TipoMaterial = "pdf" | "video" | "jogo" | "manual" | "projeto"
 
 export type PublicoSlug = "crianca" | "aluno" | "educador" | "familia"
 
@@ -9,6 +9,8 @@ export type Trilha = {
   gradient: string
   /** Selo curto exibido no card para destacar trilhas especiais/novas (ex.: "🌱 Novo"). */
   badge?: string
+  /** Tipos de material extras (além de pdf/vídeo/jogo) disponíveis só nesta trilha. */
+  tiposExtras?: TipoMaterial[]
 }
 
 export type Categoria = {
@@ -16,7 +18,21 @@ export type Categoria = {
   nome: string
   trilha: string
   publicos: PublicoSlug[]
+  /**
+   * Quando true, esta categoria não aparece como card de navegação (ex.: nas
+   * páginas /conteudos) — ela só existe como destino de upload no admin, para
+   * publicar um material que deve aparecer em TODAS as categorias da trilha.
+   */
+  ocultaNaNavegacao?: boolean
 }
+
+/**
+ * Slug especial de categoria: um material cadastrado aqui aparece para todos
+ * os anos (1º ao 5º) da trilha de Educação Ambiental, em vez de ficar restrito
+ * a um único ano. Ver usuarioPodeAcessarCategoria() e o filtro de listagem em
+ * app/conteudos/[trilha]/[categoria]/page.tsx.
+ */
+export const CATEGORIA_TODOS_OS_ANOS_SLUG = "amb-todos-anos"
 
 export type Material = {
   id: string
@@ -63,7 +79,16 @@ export function usuarioPodeAcessarCategoria(
   categoria: string,
 ): boolean {
   if (!categoriaIdUsuario || categoriaIdUsuario === "todas") return true
-  return categoriaIdUsuario === trilha || categoriaIdUsuario === categoria
+  if (categoriaIdUsuario === trilha || categoriaIdUsuario === categoria) return true
+
+  // Categoria "todos os anos": libera para quem está restrito a QUALQUER
+  // categoria da mesma trilha (ex.: aluno restrito a "amb-3-ano" também vê
+  // material publicado em "amb-todos-anos").
+  if (categoria === CATEGORIA_TODOS_OS_ANOS_SLUG) {
+    return CATEGORIAS.some((c) => c.trilha === trilha && c.slug === categoriaIdUsuario)
+  }
+
+  return false
 }
 
 export const TRILHAS: Trilha[] = [
@@ -85,6 +110,7 @@ export const TRILHAS: Trilha[] = [
     descricao: "Trilha especial de sustentabilidade e consciência ambiental, do 1º ao 5º ano.",
     gradient: "from-emerald-400 via-green-500 to-lime-400",
     badge: "🌱 Novo",
+    tiposExtras: ["manual", "projeto"],
   },
 ]
 
@@ -117,12 +143,21 @@ export const CATEGORIAS: Categoria[] = [
   { slug: "amb-3-ano", nome: "3º Ano", trilha: "educacao-ambiental", publicos: ["aluno", "educador"] },
   { slug: "amb-4-ano", nome: "4º Ano", trilha: "educacao-ambiental", publicos: ["aluno", "educador"] },
   { slug: "amb-5-ano", nome: "5º Ano", trilha: "educacao-ambiental", publicos: ["aluno", "educador"] },
+  {
+    slug: CATEGORIA_TODOS_OS_ANOS_SLUG,
+    nome: "Todos os anos (1º ao 5º)",
+    trilha: "educacao-ambiental",
+    publicos: ["aluno", "educador"],
+    ocultaNaNavegacao: true,
+  },
 ]
 
 export const TIPOS: { slug: TipoMaterial; label: string }[] = [
   { slug: "pdf", label: "PDFs" },
   { slug: "video", label: "Vídeos" },
   { slug: "jogo", label: "Jogos" },
+  { slug: "manual", label: "Manuais" },
+  { slug: "projeto", label: "Projetos" },
 ]
 
 export function getTrilha(slug: string) {
@@ -133,8 +168,9 @@ export function getCategoria(trilha: string, slug: string) {
   return CATEGORIAS.find((c) => c.trilha === trilha && c.slug === slug)
 }
 
+/** Categorias navegáveis de uma trilha (esconde categorias especiais de broadcast, ex.: "amb-todos-anos"). */
 export function getCategorias(trilha: string) {
-  return CATEGORIAS.filter((c) => c.trilha === trilha)
+  return CATEGORIAS.filter((c) => c.trilha === trilha && !c.ocultaNaNavegacao)
 }
 
 /** Materiais de demonstração — serão substituídos pelos registros do Supabase. */

@@ -95,7 +95,7 @@ CREATE TABLE IF NOT EXISTS public.materials (
   trilha TEXT NOT NULL,
   categoria TEXT NOT NULL,
   publico TEXT NOT NULL CHECK (publico IN ('crianca', 'aluno', 'educador', 'familia')),
-  tipo TEXT NOT NULL CHECK (tipo IN ('pdf', 'video', 'jogo')),
+  tipo TEXT NOT NULL CHECK (tipo IN ('pdf', 'video', 'jogo', 'manual', 'projeto')),
   url TEXT,                 -- link externo (vídeo, jogo, ou PDF hospedado fora do Storage)
   storage_path TEXT,        -- caminho no bucket privado "materiais" (upload direto de PDF)
   created_by UUID REFERENCES auth.users(id) ON DELETE SET NULL,
@@ -110,6 +110,12 @@ ALTER TABLE public.materials ADD COLUMN IF NOT EXISTS storage_path TEXT;
 ALTER TABLE public.materials ADD COLUMN IF NOT EXISTS created_by UUID REFERENCES auth.users(id) ON DELETE SET NULL;
 ALTER TABLE public.materials DROP CONSTRAINT IF EXISTS materials_tem_conteudo;
 ALTER TABLE public.materials ADD CONSTRAINT materials_tem_conteudo CHECK (url IS NOT NULL OR storage_path IS NOT NULL);
+
+-- 'manual' e 'projeto' são os dois tipos novos exclusivos da Educação Ambiental
+-- (ver Trilha.tiposExtras em lib/catalog.ts) — sem este ALTER, o INSERT/UPDATE
+-- de um material desses tipos falha com "violates check constraint materials_tipo_check".
+ALTER TABLE public.materials DROP CONSTRAINT IF EXISTS materials_tipo_check;
+ALTER TABLE public.materials ADD CONSTRAINT materials_tipo_check CHECK (tipo IN ('pdf', 'video', 'jogo', 'manual', 'projeto'));
 
 ALTER TABLE public.materials ENABLE ROW LEVEL SECURITY;
 
@@ -142,8 +148,15 @@ AS $$
         OR (
           p.papel IN ('professor', 'aluno', 'pai')
           -- restrição de turma/ano: "todas" (ou vazio) libera tudo; senão precisa
-          -- bater com a trilha inteira ou a categoria (ano/turma) específica
-          AND (p.categoria_id IS NULL OR p.categoria_id = 'todas' OR p.categoria_id = p_trilha OR p.categoria_id = p_categoria)
+          -- bater com a trilha inteira ou a categoria (ano/turma) específica.
+          -- Exceção: 'amb-todos-anos' é a categoria de broadcast da Educação
+          -- Ambiental (ver CATEGORIA_TODOS_OS_ANOS_SLUG em lib/catalog.ts) — um
+          -- material publicado ali fica visível para qualquer aluno/professor/pai
+          -- restrito a QUALQUER um dos anos dessa trilha, não só ao ano exato.
+          AND (
+            p.categoria_id IS NULL OR p.categoria_id = 'todas' OR p.categoria_id = p_trilha OR p.categoria_id = p_categoria
+            OR (p_categoria = 'amb-todos-anos' AND p.categoria_id IN ('amb-1-ano', 'amb-2-ano', 'amb-3-ano', 'amb-4-ano', 'amb-5-ano'))
+          )
           AND (
             p.papel = 'professor'
             OR (p.papel = 'aluno' AND p_publico IN ('aluno', 'crianca'))

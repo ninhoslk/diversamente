@@ -2,7 +2,7 @@
 
 import { useParams, useRouter } from "next/navigation"
 import { useEffect, useMemo, useState } from "react"
-import { FileText, Gamepad2, Loader2, Video } from "lucide-react"
+import { BookOpen, FileText, FolderKanban, Gamepad2, Loader2, Video } from "lucide-react"
 import { toast } from "sonner"
 import { Breadcrumbs } from "@/components/app/breadcrumbs"
 import { Badge } from "@/components/ui/badge"
@@ -15,8 +15,20 @@ import { Textarea } from "@/components/ui/textarea"
 import { CATEGORIAS, PUBLICOS, TRILHAS, type PublicoSlug, type TipoMaterial } from "@/lib/catalog"
 import { useApp } from "@/lib/app-provider"
 
-const ICONE_TIPO: Record<TipoMaterial, typeof FileText> = { pdf: FileText, video: Video, jogo: Gamepad2 }
-const LABEL_TIPO: Record<TipoMaterial, string> = { pdf: "PDF", video: "Vídeo", jogo: "Jogo" }
+const ICONE_TIPO: Record<TipoMaterial, typeof FileText> = {
+  pdf: FileText,
+  video: Video,
+  jogo: Gamepad2,
+  manual: BookOpen,
+  projeto: FolderKanban,
+}
+const LABEL_TIPO: Record<TipoMaterial, string> = {
+  pdf: "PDF",
+  video: "Vídeo",
+  jogo: "Jogo",
+  manual: "Manual",
+  projeto: "Projeto",
+}
 
 export default function EditarMaterialPage() {
   const router = useRouter()

@@ -28,7 +28,7 @@ export function MaterialDialog({
             </DialogHeader>
 
             <div className="mt-2">
-              {material.tipo === "pdf" ? (
+              {material.tipo === "pdf" || material.tipo === "manual" || material.tipo === "projeto" ? (
                 <PdfViewer
                   materialId={material.id}
                   url={material.url}
