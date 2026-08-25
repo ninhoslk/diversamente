@@ -155,7 +155,7 @@ AS $$
           -- restrito a QUALQUER um dos anos dessa trilha, não só ao ano exato.
           AND (
             p.categoria_id IS NULL OR p.categoria_id = 'todas' OR p.categoria_id = p_trilha OR p.categoria_id = p_categoria
-            OR (p_categoria = 'amb-todos-anos' AND p.categoria_id IN ('amb-1-ano', 'amb-2-ano', 'amb-3-ano', 'amb-4-ano', 'amb-5-ano'))
+            OR (p_categoria = 'amb-todos-anos' AND p.categoria_id IN ('amb-pre-alfabetizacao', 'amb-1-ano', 'amb-2-ano', 'amb-3-ano', 'amb-4-ano', 'amb-5-ano'))
           )
           AND (
             p.papel = 'professor'
