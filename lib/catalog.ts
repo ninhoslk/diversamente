@@ -1,4 +1,4 @@
-export type TipoMaterial = "pdf" | "video" | "jogo" | "manual" | "projeto"
+export type TipoMaterial = "pdf" | "video" | "jogo" | "manual" | "projeto" | "audio"
 
 export type PublicoSlug = "crianca" | "aluno" | "educador" | "familia"
 
@@ -97,12 +97,14 @@ export const TRILHAS: Trilha[] = [
     nome: "Educação Infantil",
     descricao: "Berçário, Maternal e Pré-alfabetização com materiais lúdicos e sensoriais.",
     gradient: "from-holo-pink via-holo-lilac to-holo-blue",
+    tiposExtras: ["audio"],
   },
   {
     slug: "fundamental-1",
     nome: "Ensino Fundamental I",
     descricao: "Do 1º ao 5º ano, com trilhas para estudante, educador e família.",
     gradient: "from-holo-blue via-holo-mint to-holo-yellow",
+    tiposExtras: ["audio"],
   },
   {
     slug: "educacao-ambiental",
@@ -159,7 +161,23 @@ export const TIPOS: { slug: TipoMaterial; label: string }[] = [
   { slug: "jogo", label: "Jogos" },
   { slug: "manual", label: "Manuais" },
   { slug: "projeto", label: "Projetos" },
+  { slug: "audio", label: "Áudios" },
 ]
+
+/** Tipos de material sempre disponíveis, em qualquer trilha. */
+export const TIPOS_BASE: TipoMaterial[] = ["pdf", "video", "jogo"]
+
+/**
+ * Tipos habilitados para uma trilha específica: os 3 tipos base + os
+ * `tiposExtras` daquela trilha (ex.: manual/projeto só na Educação Ambiental,
+ * áudio só na Educação Infantil e no Fundamental I). Usado tanto para decidir
+ * quais abas de tipo mostrar em /conteudos quanto para validar no servidor
+ * que um material não é cadastrado com um tipo fora do lugar.
+ */
+export function tiposDisponiveisNaTrilha(trilhaSlug: string): TipoMaterial[] {
+  const extras = TRILHAS.find((t) => t.slug === trilhaSlug)?.tiposExtras ?? []
+  return [...TIPOS_BASE, ...extras]
+}
 
 export function getTrilha(slug: string) {
   return TRILHAS.find((t) => t.slug === slug)

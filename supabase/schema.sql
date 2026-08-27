@@ -95,7 +95,7 @@ CREATE TABLE IF NOT EXISTS public.materials (
   trilha TEXT NOT NULL,
   categoria TEXT NOT NULL,
   publico TEXT NOT NULL CHECK (publico IN ('crianca', 'aluno', 'educador', 'familia')),
-  tipo TEXT NOT NULL CHECK (tipo IN ('pdf', 'video', 'jogo', 'manual', 'projeto')),
+  tipo TEXT NOT NULL CHECK (tipo IN ('pdf', 'video', 'jogo', 'manual', 'projeto', 'audio')),
   url TEXT,                 -- link externo (vídeo, jogo, ou PDF hospedado fora do Storage)
   storage_path TEXT,        -- caminho no bucket privado "materiais" (upload direto de PDF)
   created_by UUID REFERENCES auth.users(id) ON DELETE SET NULL,
@@ -114,8 +114,10 @@ ALTER TABLE public.materials ADD CONSTRAINT materials_tem_conteudo CHECK (url IS
 -- 'manual' e 'projeto' são os dois tipos novos exclusivos da Educação Ambiental
 -- (ver Trilha.tiposExtras em lib/catalog.ts) — sem este ALTER, o INSERT/UPDATE
 -- de um material desses tipos falha com "violates check constraint materials_tipo_check".
+-- 'audio' é o tipo exclusivo da Educação Infantil e do Fundamental I (link
+-- externo, mesmo fluxo do 'jogo' — ver Trilha.tiposExtras em lib/catalog.ts).
 ALTER TABLE public.materials DROP CONSTRAINT IF EXISTS materials_tipo_check;
-ALTER TABLE public.materials ADD CONSTRAINT materials_tipo_check CHECK (tipo IN ('pdf', 'video', 'jogo', 'manual', 'projeto'));
+ALTER TABLE public.materials ADD CONSTRAINT materials_tipo_check CHECK (tipo IN ('pdf', 'video', 'jogo', 'manual', 'projeto', 'audio'));
 
 ALTER TABLE public.materials ENABLE ROW LEVEL SECURITY;
 

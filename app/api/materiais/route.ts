@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server"
 import { getUsuarioAtual } from "@/lib/supabase/server"
 import { createAdminSupabaseClient } from "@/lib/supabase/admin"
-import { CATEGORIAS, TRILHAS, PUBLICOS, type PublicoSlug, type TipoMaterial } from "@/lib/catalog"
+import { CATEGORIAS, TRILHAS, PUBLICOS, TIPOS, tiposDisponiveisNaTrilha, type PublicoSlug, type TipoMaterial } from "@/lib/catalog"
 
 export function validarDestino(trilha: string, categoria: string, publico: string) {
   const trilhaValida = TRILHAS.some((t) => t.slug === trilha)
@@ -65,15 +65,16 @@ async function processarEnvio(
   const storagePathEnviado = typeof body.storagePath === "string" ? body.storagePath.trim() : ""
 
   if (!titulo) return NextResponse.json({ ok: false, erro: "Informe o título do material." }, { status: 400 })
-  if (!["pdf", "video", "jogo", "manual", "projeto"].includes(tipo)) {
+  if (!TIPOS.some((t) => t.slug === tipo)) {
     return NextResponse.json({ ok: false, erro: "Tipo de material inválido." }, { status: 400 })
   }
-  // Manual/Projeto são exclusivos da trilha de Educação Ambiental (ver
-  // Trilha.tiposExtras em lib/catalog.ts) — evita criar material "órfão" que
-  // nunca aparece em nenhuma aba de tipo em outra trilha.
-  if ((tipo === "manual" || tipo === "projeto") && trilha !== "educacao-ambiental") {
+  // Cada trilha só aceita os tipos base (pdf/vídeo/jogo) + seus tiposExtras
+  // (ex.: manual/projeto só na Educação Ambiental, áudio só na Educação
+  // Infantil e no Fundamental I) — evita criar material "órfão" que nunca
+  // aparece em nenhuma aba de tipo naquela trilha. Ver lib/catalog.ts.
+  if (!tiposDisponiveisNaTrilha(trilha).includes(tipo)) {
     return NextResponse.json(
-      { ok: false, erro: "Manuais e Projetos só podem ser publicados na trilha de Educação Ambiental." },
+      { ok: false, erro: "Este tipo de material não está disponível para a trilha selecionada." },
       { status: 400 },
     )
   }

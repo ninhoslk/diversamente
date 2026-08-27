@@ -2,7 +2,7 @@
 
 import { use, useMemo, useState } from "react"
 import { notFound } from "next/navigation"
-import { AlertTriangle, BookOpen, FileText, FolderKanban, Gamepad2, Inbox, PlayCircle, Lock } from "lucide-react"
+import { AlertTriangle, BookOpen, FileText, FolderKanban, Gamepad2, Headphones, Inbox, PlayCircle, Lock } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -14,6 +14,7 @@ import {
   getTrilha,
   PUBLICOS,
   TIPOS,
+  tiposDisponiveisNaTrilha,
   publicosPermitidosParaPapel,
   usuarioPodeAcessarCategoria,
   type Material,
@@ -27,6 +28,7 @@ const ICONES: Record<TipoMaterial, typeof FileText> = {
   jogo: Gamepad2,
   manual: BookOpen,
   projeto: FolderKanban,
+  audio: Headphones,
 }
 
 export default function CategoriaPage({
@@ -60,10 +62,9 @@ export default function CategoriaPage({
   )
 
   const tiposDisponiveis = useMemo(() => {
-    const base: TipoMaterial[] = ["pdf", "video", "jogo"]
-    const extras = trilha.tiposExtras ?? []
-    return TIPOS.filter((t) => base.includes(t.slug) || extras.includes(t.slug))
-  }, [trilha])
+    const permitidos = tiposDisponiveisNaTrilha(trilhaSlug)
+    return TIPOS.filter((t) => permitidos.includes(t.slug))
+  }, [trilhaSlug])
 
   const publicoInicial = publicosPermitidos.length > 0 ? publicosPermitidos[0] : categoria.publicos[0]
 

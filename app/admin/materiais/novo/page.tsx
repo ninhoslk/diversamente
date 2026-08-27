@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation"
 import { useMemo, useState } from "react"
-import { BookOpen, FileText, FolderKanban, Gamepad2, Loader2, UploadCloud, Video, ShieldCheck } from "lucide-react"
+import { BookOpen, FileText, FolderKanban, Gamepad2, Headphones, Loader2, UploadCloud, Video, ShieldCheck } from "lucide-react"
 import { toast } from "sonner"
 import { Breadcrumbs } from "@/components/app/breadcrumbs"
 import { Button } from "@/components/ui/button"
@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
-import { CATEGORIAS, PUBLICOS, TRILHAS, type PublicoSlug, type TipoMaterial } from "@/lib/catalog"
+import { CATEGORIAS, PUBLICOS, TRILHAS, tiposDisponiveisNaTrilha, type PublicoSlug, type TipoMaterial } from "@/lib/catalog"
 import { createClient } from "@/lib/supabase/client"
 import { cn } from "@/lib/utils"
 
@@ -31,6 +31,7 @@ const TIPOS_FORM_BASE: { slug: TipoMaterial; label: string; ajuda: string; Icon:
 const TIPOS_FORM_EXTRAS: Record<string, { slug: TipoMaterial; label: string; ajuda: string; Icon: typeof FileText }> = {
   manual: { slug: "manual", label: "Manual", ajuda: "PDF protegido, aba separada de 'Manuais'", Icon: BookOpen },
   projeto: { slug: "projeto", label: "Projeto", ajuda: "PDF protegido, aba separada de 'Projetos'", Icon: FolderKanban },
+  audio: { slug: "audio", label: "Áudio", ajuda: "Link para faixa de áudio (mesmo fluxo do Jogo)", Icon: Headphones },
 }
 
 export default function NovoMaterialPage() {
@@ -63,10 +64,9 @@ export default function NovoMaterialPage() {
     setTrilha(novaTrilha)
     setCategoria("")
     setPublico("")
-    // Se o tipo selecionado (ex.: Manual/Projeto) só existe na trilha anterior,
-    // volta para PDF em vez de deixar o formulário num estado inválido.
-    const extrasDaNovaTrilha = TRILHAS.find((t) => t.slug === novaTrilha)?.tiposExtras ?? []
-    if (tipo !== "pdf" && tipo !== "video" && tipo !== "jogo" && !extrasDaNovaTrilha.includes(tipo)) {
+    // Se o tipo selecionado (ex.: Manual/Projeto/Áudio) só existe na trilha
+    // anterior, volta para PDF em vez de deixar o formulário num estado inválido.
+    if (!tiposDisponiveisNaTrilha(novaTrilha).includes(tipo)) {
       setTipo("pdf")
     }
   }
@@ -171,7 +171,7 @@ export default function NovoMaterialPage() {
         <h1 className="font-serif text-3xl font-semibold tracking-tight text-balance sm:text-4xl">Novo material</h1>
         <p className="mt-2 leading-relaxed text-muted-foreground text-pretty">
           Faça o upload do PDF ou cadastre links de vídeos e jogos para a biblioteca. Na Educação Ambiental também é
-          possível publicar Manuais e Projetos.
+          possível publicar Manuais e Projetos, e na Educação Infantil e no Fundamental I também dá para publicar Áudios.
         </p>
       </div>
 
@@ -328,7 +328,9 @@ export default function NovoMaterialPage() {
               </div>
             ) : (
               <div className="flex flex-col gap-2">
-                <Label htmlFor="url">{tipo === "video" ? "Link do vídeo" : "Link do jogo"}</Label>
+                <Label htmlFor="url">
+                  {tipo === "video" ? "Link do vídeo" : tipo === "audio" ? "Link do áudio" : "Link do jogo"}
+                </Label>
                 <Input
                   id="url"
                   value={url}

@@ -1,6 +1,6 @@
 "use client"
 
-import { ExternalLink, Gamepad2 } from "lucide-react"
+import { ExternalLink, Gamepad2, Headphones } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { PdfViewer } from "@/components/viewers/pdf-viewer"
@@ -48,6 +48,22 @@ export function MaterialDialog({
                   <Button asChild className="rounded-full" disabled={!material.url}>
                     <a href={material.url || "#"} target="_blank" rel="noopener noreferrer">
                       Abrir jogo interativo
+                      <ExternalLink className="size-4" aria-hidden="true" />
+                    </a>
+                  </Button>
+                </div>
+              ) : null}
+              {material.tipo === "audio" ? (
+                <div className="flex flex-col items-center gap-4 rounded-2xl bg-secondary/50 p-6 sm:p-10 text-center">
+                  <span className="flex size-14 items-center justify-center rounded-2xl bg-primary/10">
+                    <Headphones className="size-7 text-primary" aria-hidden="true" />
+                  </span>
+                  <p className="max-w-sm text-sm leading-relaxed text-muted-foreground">
+                    Este áudio abre em uma nova aba para melhor reprodução.
+                  </p>
+                  <Button asChild className="rounded-full" disabled={!material.url}>
+                    <a href={material.url || "#"} target="_blank" rel="noopener noreferrer">
+                      Abrir áudio
                       <ExternalLink className="size-4" aria-hidden="true" />
                     </a>
                   </Button>

@@ -2,7 +2,7 @@
 
 import { useParams, useRouter } from "next/navigation"
 import { useEffect, useMemo, useState } from "react"
-import { BookOpen, FileText, FolderKanban, Gamepad2, Loader2, Video } from "lucide-react"
+import { BookOpen, FileText, FolderKanban, Gamepad2, Headphones, Loader2, Video } from "lucide-react"
 import { toast } from "sonner"
 import { Breadcrumbs } from "@/components/app/breadcrumbs"
 import { Badge } from "@/components/ui/badge"
@@ -21,6 +21,7 @@ const ICONE_TIPO: Record<TipoMaterial, typeof FileText> = {
   jogo: Gamepad2,
   manual: BookOpen,
   projeto: FolderKanban,
+  audio: Headphones,
 }
 const LABEL_TIPO: Record<TipoMaterial, string> = {
   pdf: "PDF",
@@ -28,6 +29,7 @@ const LABEL_TIPO: Record<TipoMaterial, string> = {
   jogo: "Jogo",
   manual: "Manual",
   projeto: "Projeto",
+  audio: "Áudio",
 }
 
 export default function EditarMaterialPage() {
@@ -199,7 +201,15 @@ export default function EditarMaterialPage() {
               </div>
             ) : (
               <div className="flex flex-col gap-2">
-                <Label htmlFor="url">{material.tipo === "video" ? "Link do vídeo" : material.tipo === "jogo" ? "Link do jogo" : "Link do PDF"}</Label>
+                <Label htmlFor="url">
+                  {material.tipo === "video"
+                    ? "Link do vídeo"
+                    : material.tipo === "jogo"
+                      ? "Link do jogo"
+                      : material.tipo === "audio"
+                        ? "Link do áudio"
+                        : "Link do PDF"}
+                </Label>
                 <Input
                   id="url"
                   value={url}
