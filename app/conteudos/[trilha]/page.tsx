@@ -3,12 +3,16 @@
 import { use } from "react"
 import Link from "next/link"
 import { notFound } from "next/navigation"
-import { ArrowRight, Folder, Lock } from "lucide-react"
+import { ArrowRight, Folder, Lock, MessageSquareHeart } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
 import { Breadcrumbs } from "@/components/app/breadcrumbs"
 import { getCategorias, getTrilha, PUBLICOS, usuarioPodeAcessarCategoria } from "@/lib/catalog"
 import { useApp } from "@/lib/app-provider"
+
+// O Mural é exclusivo da trilha de Educação Ambiental — vira um card de destaque
+// ao lado dos anos, em vez de mais uma categoria dentro deles.
+const TRILHA_COM_MURAL = "educacao-ambiental"
 
 export default function TrilhaPage({ params }: { params: Promise<{ trilha: string }> }) {
   const { trilha: trilhaSlug } = use(params)
@@ -30,6 +34,33 @@ export default function TrilhaPage({ params }: { params: Promise<{ trilha: strin
       </header>
 
       <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+        {trilhaSlug === TRILHA_COM_MURAL ? (
+          <Card className="group relative overflow-hidden rounded-3xl border-0 bg-gradient-to-br from-emerald-400 via-green-500 to-lime-400 p-[2px] shadow-sm transition-transform hover:-translate-y-1">
+            <span className="absolute right-4 top-4 z-10 inline-flex items-center gap-1.5 rounded-full bg-white/90 px-2.5 py-1 text-xs font-semibold text-red-600 shadow-sm dark:bg-black/70 dark:text-red-400">
+              <span className="size-1.5 animate-pulse rounded-full bg-red-500" aria-hidden="true" />
+              ao vivo
+            </span>
+            <Link href={`/conteudos/${trilhaSlug}/mural`}>
+              <CardContent className="flex h-full flex-col gap-4 rounded-3xl bg-card/85 p-6 backdrop-blur-sm">
+                <span className="flex size-11 items-center justify-center rounded-2xl bg-emerald-500/15">
+                  <MessageSquareHeart className="size-5 text-emerald-600 dark:text-emerald-400" aria-hidden="true" />
+                </span>
+
+                <h2 className="text-xl font-semibold">Mural</h2>
+
+                <p className="text-sm text-muted-foreground">
+                  Espaço colaborativo aberto para compartilhar ideias, fotos e reflexões sobre Educação Ambiental.
+                </p>
+
+                <span className="inline-flex items-center gap-1.5 text-sm font-medium text-primary">
+                  Abrir
+                  <ArrowRight className="size-4 transition-transform group-hover:translate-x-1" aria-hidden="true" />
+                </span>
+              </CardContent>
+            </Link>
+          </Card>
+        ) : null}
+
         {categorias.map((categoria) => {
           const liberada = podeVerTudo || usuarioPodeAcessarCategoria(usuario?.categoriaId, trilhaSlug, categoria.slug)
 

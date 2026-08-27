@@ -28,9 +28,6 @@ export function SiteFooter() {
             <Link href="/mentoria" className="transition-colors hover:text-foreground">
               Formação
             </Link>
-            <Link href="/mural" className="transition-colors hover:text-foreground">
-              Mural
-            </Link>
             <Link href="/ajuda" className="transition-colors hover:text-foreground">
               Ajuda
             </Link>
