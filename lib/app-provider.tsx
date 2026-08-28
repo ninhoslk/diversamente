@@ -3,7 +3,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react"
 import type { AuthChangeEvent, Session } from "@supabase/supabase-js"
 import type { Material } from "@/lib/catalog"
-import { CONFIG_PADRAO_SITE, type SiteConfig } from "@/lib/site-config"
+import { CONFIG_PADRAO_SITE, mesclarConfigComPadrao, type SiteConfig } from "@/lib/site-config"
 import { createClient } from "@/lib/supabase/client"
 import { fetchSupabaseSiteConfig, saveSupabaseSiteConfig } from "@/lib/supabase"
 
@@ -54,22 +54,6 @@ const AppContext = createContext<AppContextValue | null>(null)
 
 const CHAVE_SITE_CONFIG = "diversamente:site-config"
 
-/**
- * Mescla a config vinda do Supabase com os padrões locais, seção por seção.
- * O JSON salvo no banco pode ter sido gravado antes de um campo novo ser
- * adicionado ao tipo SiteConfig (ex.: mentoria.categorias e
- * mentoria.formadores) — sem isso, a página quebra ao iterar um campo que
- * não existe no registro salvo anteriormente.
- */
-function mesclarComPadrao(config: SiteConfig): SiteConfig {
-  return {
-    home: { ...CONFIG_PADRAO_SITE.home, ...config.home },
-    autores: { ...CONFIG_PADRAO_SITE.autores, ...config.autores },
-    quemSomos: { ...CONFIG_PADRAO_SITE.quemSomos, ...config.quemSomos },
-    mentoria: { ...CONFIG_PADRAO_SITE.mentoria, ...config.mentoria },
-  }
-}
-
 function linhaParaMaterial(row: Record<string, unknown>): Material {
   return {
     id: row.id as string,
@@ -85,7 +69,18 @@ function linhaParaMaterial(row: Record<string, unknown>): Material {
   }
 }
 
-export function AppProvider({ children }: { children: React.ReactNode }) {
+export function AppProvider({
+  children,
+  initialSiteConfig,
+}: {
+  children: React.ReactNode
+  /**
+   * Config de aparência já buscada no servidor (ver lib/site-config-server.ts),
+   * usada como estado inicial para a primeira renderização já sair com o texto
+   * customizado — evita o "flash" do texto padrão antes do fetch no cliente.
+   */
+  initialSiteConfig?: SiteConfig
+}) {
   const supabase = useMemo(() => createClient(), [])
 
   const [usuario, setUsuario] = useState<Usuario | null>(null)
@@ -94,7 +89,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [materiais, setMateriais] = useState<Material[]>([])
   const [carregandoMateriais, setCarregandoMateriais] = useState(true)
   const [erroMateriais, setErroMateriais] = useState<string | null>(null)
-  const [siteConfig, setSiteConfig] = useState<SiteConfig>(CONFIG_PADRAO_SITE)
+  const [siteConfig, setSiteConfig] = useState<SiteConfig>(() => initialSiteConfig ?? CONFIG_PADRAO_SITE)
 
   const carregarPerfil = useCallback(
     async (userId: string, email: string | undefined) => {
@@ -150,14 +145,19 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         await carregarPerfil(session.user.id, session.user.email)
       }
 
-      const configSupabase = await fetchSupabaseSiteConfig()
-      if (configSupabase && configSupabase.home) {
-        setSiteConfig(mesclarComPadrao(configSupabase))
-      } else {
-        try {
-          const salvo = localStorage.getItem(CHAVE_SITE_CONFIG)
-          if (salvo) setSiteConfig(mesclarComPadrao(JSON.parse(salvo)))
-        } catch {}
+      // Se o servidor já mandou a config (ver lib/site-config-server.ts), não refaz
+      // a mesma busca no cliente — evita uma chamada redundante e qualquer chance
+      // de o texto "piscar" caso a segunda busca chegue com um valor diferente.
+      if (!initialSiteConfig) {
+        const configSupabase = await fetchSupabaseSiteConfig()
+        if (configSupabase && configSupabase.home) {
+          setSiteConfig(mesclarConfigComPadrao(configSupabase))
+        } else {
+          try {
+            const salvo = localStorage.getItem(CHAVE_SITE_CONFIG)
+            if (salvo) setSiteConfig(mesclarConfigComPadrao(JSON.parse(salvo)))
+          } catch {}
+        }
       }
 
       if (ativo) setCarregando(false)
@@ -183,6 +183,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       ativo = false
       subscription.unsubscribe()
     }
+    // initialSiteConfig é um valor de uma única renderização inicial (vindo do
+    // servidor) — não deve reexecutar este efeito se o objeto mudar de identidade.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [supabase, carregarPerfil])
 
   // Assina mudanças na aparência do site (Elementor). A leitura é pública, então
@@ -195,7 +198,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       .on("postgres_changes", { event: "*", schema: "public", table: "site_config" }, async () => {
         const configAtualizada = await fetchSupabaseSiteConfig()
         if (configAtualizada && configAtualizada.home) {
-          setSiteConfig(mesclarComPadrao(configAtualizada))
+          setSiteConfig(mesclarConfigComPadrao(configAtualizada))
         }
       })
       .subscribe()

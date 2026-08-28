@@ -1,5 +1,12 @@
+import type { Metadata } from "next"
 import { AppHeader } from "@/components/app/app-header"
 import { RouteGuard } from "@/components/auth/route-guard"
+
+// Área privada atrás de login — não deve ser indexada por buscadores
+// (ver também app/robots.ts, que já bloqueia o rastreamento deste caminho).
+export const metadata: Metadata = {
+  robots: { index: false, follow: false },
+}
 
 export default function ConteudosLayout({ children }: { children: React.ReactNode }) {
   return (

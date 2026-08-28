@@ -5,7 +5,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { PageShell } from "@/components/site/page-shell"
 
 export const metadata: Metadata = {
-  title: "Ajuda | Diversamente",
+  title: "Ajuda",
   description: "Central de ajuda da Diversamente: perguntas frequentes e canais de contato.",
 }
 

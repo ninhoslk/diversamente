@@ -85,6 +85,23 @@ export type SiteConfig = {
   mentoria: ConfigMentoria
 }
 
+/**
+ * Mescla a config vinda do Supabase com os padrões locais, seção por seção.
+ * O JSON salvo no banco pode ter sido gravado antes de um campo novo ser
+ * adicionado ao tipo SiteConfig (ex.: mentoria.categorias e
+ * mentoria.formadores) — sem isso, a página quebra ao iterar um campo que
+ * não existe no registro salvo anteriormente. Usada tanto no servidor
+ * (layout.tsx, para a primeira renderização) quanto no cliente (app-provider.tsx).
+ */
+export function mesclarConfigComPadrao(config: SiteConfig): SiteConfig {
+  return {
+    home: { ...CONFIG_PADRAO_SITE.home, ...config.home },
+    autores: { ...CONFIG_PADRAO_SITE.autores, ...config.autores },
+    quemSomos: { ...CONFIG_PADRAO_SITE.quemSomos, ...config.quemSomos },
+    mentoria: { ...CONFIG_PADRAO_SITE.mentoria, ...config.mentoria },
+  }
+}
+
 export const CONFIG_PADRAO_SITE: SiteConfig = {
   home: {
     badge: "Do berçário ao 5º ano, em um só lugar",

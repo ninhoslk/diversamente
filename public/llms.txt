@@ -1,0 +1,20 @@
+# Diversamente
+
+> Plataforma educacional que organiza material didático (PDFs, vídeos, jogos, manuais, projetos e áudios) em trilhas de aprendizagem para escolas, estudantes, educadores e famílias.
+
+A Diversamente é mantida pela Editora Diversamente. Reúne conteúdo pedagógico estruturado em três trilhas: Educação Infantil (Berçário, Maternal e Pré-alfabetização), Ensino Fundamental I (1º ao 5º ano) e Educação Ambiental (trilha especial de sustentabilidade, do 1º ao 5º ano). O acesso ao catálogo de materiais (/conteudos) exige login — é restrito a usuários cadastrados pela escola/instituição parceira.
+
+## Páginas públicas
+
+- [Página inicial](https://editoradiversamente.com.br/): apresentação da plataforma e das trilhas de aprendizagem.
+- [Quem Somos](https://editoradiversamente.com.br/quem-somos): missão, visão, valores e história da equipe pedagógica.
+- [Autores](https://editoradiversamente.com.br/autores): educadores e especialistas que assinam os materiais.
+- [Formação](https://editoradiversamente.com.br/mentoria): palestras, cursos, oficinas e assessoria pedagógica para escolas e educadores.
+- [Ajuda](https://editoradiversamente.com.br/ajuda): perguntas frequentes e canais de contato.
+- [Termos de Uso](https://editoradiversamente.com.br/termos-de-uso): condições de uso do material, exclusivo da Editora Diversamente.
+- [Política de Privacidade](https://editoradiversamente.com.br/politica-de-privacidade): tratamento de dados pessoais.
+
+## Observações
+
+- O catálogo de material didático (/conteudos) e o painel administrativo (/admin) exigem autenticação e não são indexáveis — ver /robots.txt.
+- Todo o material pedagógico é de propriedade exclusiva da Editora Diversamente; uso e reprodução exigem autorização prévia (ver Termos de Uso).

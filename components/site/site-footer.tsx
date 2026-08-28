@@ -57,8 +57,16 @@ export function SiteFooter() {
         </div>
       </div>
 
-      <div className="border-t px-4 py-5 text-center text-xs text-muted-foreground sm:px-6">
-        © {new Date().getFullYear()} Diversamente. Todos os direitos reservados.
+      <div className="flex flex-col items-center gap-2 border-t px-4 py-5 text-center text-xs text-muted-foreground sm:flex-row sm:justify-between sm:px-6">
+        <span>© {new Date().getFullYear()} Diversamente. Todos os direitos reservados.</span>
+        <div className="flex items-center gap-4">
+          <Link href="/termos-de-uso" className="transition-colors hover:text-foreground">
+            Termos de Uso
+          </Link>
+          <Link href="/politica-de-privacidade" className="transition-colors hover:text-foreground">
+            Política de Privacidade
+          </Link>
+        </div>
       </div>
     </footer>
   )
