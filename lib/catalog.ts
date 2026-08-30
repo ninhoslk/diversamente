@@ -94,14 +94,20 @@ export function usuarioPodeAcessarCategoria(
 export const TRILHAS: Trilha[] = [
   {
     slug: "educacao-infantil",
-    nome: "Educação Infantil",
+    nome: "Educação Infantil Neurodivergente",
     descricao: "Berçário, Maternal e Pré-alfabetização com materiais lúdicos e sensoriais.",
     gradient: "from-holo-pink via-holo-lilac to-holo-blue",
     tiposExtras: ["audio"],
   },
   {
+    slug: "educacao-infantil-regular",
+    nome: "Educação Infantil Regular",
+    descricao: "Berçário, Maternal e Pré-alfabetização com materiais lúdicos e sensoriais.",
+    gradient: "from-holo-yellow via-holo-mint to-holo-blue",
+  },
+  {
     slug: "fundamental-1",
-    nome: "Ensino Fundamental I",
+    nome: "Ensino Fundamental I Neurodivergente",
     descricao: "Do 1º ao 5º ano, com trilhas para estudante, educador e família.",
     gradient: "from-holo-blue via-holo-mint to-holo-yellow",
     tiposExtras: ["audio"],

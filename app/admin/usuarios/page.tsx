@@ -34,8 +34,9 @@ export default function AdminUsuariosPage() {
 
   const CATEGORIAS_OPCOES = [
     { id: "todas", nome: "Todas as salas / anos (Acesso total)" },
-    { id: "educacao-infantil", nome: "Educação Infantil (Berçário, Maternal, Pré-alfabetização)" },
-    { id: "fundamental-1", nome: "Ensino Fundamental I (1º ao 5º ano)" },
+    { id: "educacao-infantil", nome: "Educação Infantil Neurodivergente (Berçário, Maternal, Pré-alfabetização)" },
+    { id: "educacao-infantil-regular", nome: "Educação Infantil Regular (Berçário, Maternal, Pré-alfabetização)" },
+    { id: "fundamental-1", nome: "Ensino Fundamental I Neurodivergente (1º ao 5º ano)" },
     { id: "educacao-ambiental", nome: "Educação Ambiental (1º ao 5º ano)" },
     ...CATEGORIAS.map((c) => ({ id: c.slug, nome: `Apenas: ${c.nome}` })),
   ]

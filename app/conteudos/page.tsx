@@ -19,6 +19,7 @@ export default function ConteudosPage() {
   const trilhasPermitidas = TRILHAS.filter((trilha) => {
     if (ehAdminOuProf || catUser === "todas") return true
     if (catUser === "educacao-infantil") return trilha.slug === "educacao-infantil"
+    if (catUser === "educacao-infantil-regular") return trilha.slug === "educacao-infantil-regular"
     if (catUser === "fundamental-1") return trilha.slug === "fundamental-1"
     if (catUser === "educacao-ambiental") return trilha.slug === "educacao-ambiental"
     const categoriasDaTrilha = getCategorias(trilha.slug)
