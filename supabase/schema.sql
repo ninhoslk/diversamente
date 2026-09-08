@@ -252,3 +252,48 @@ ON CONFLICT (id) DO UPDATE SET
 -- exclusivamente nas rotas de servidor em app/api/materiais/**), que
 -- ignora RLS. Leitura pelo aluno acontece só por URL assinada de
 -- curta duração (createSignedUrl), nunca por acesso direto ao objeto.
+
+
+-- ---------------------------------------------------
+-- 5. BIBLIOTECA DIGITAL (artigos, folhetos e livros da Coleção Diversamente)
+-- ---------------------------------------------------
+-- Diferente de "materials", não tem trilha/categoria/turma: é uma lista única,
+-- visível para QUALQUER usuário autenticado (aluno, pai, professor ou admin),
+-- sem distinção de papel ou turma — só existem itens de leitura institucional,
+-- sempre por link externo (sem upload de arquivo/Storage).
+CREATE TABLE IF NOT EXISTS public.biblioteca_digital (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  titulo TEXT NOT NULL,
+  descricao TEXT,
+  tipo TEXT NOT NULL CHECK (tipo IN ('artigo', 'folheto', 'livro', 'outro')),
+  url TEXT NOT NULL,
+  created_by UUID REFERENCES auth.users(id) ON DELETE SET NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE public.biblioteca_digital ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "biblioteca_digital_select" ON public.biblioteca_digital;
+DROP POLICY IF EXISTS "biblioteca_digital_write" ON public.biblioteca_digital;
+
+-- Qualquer usuário autenticado pode ler a lista inteira — sem restrição de
+-- papel/turma, ao contrário de "materials". Visitante não-autenticado (anon)
+-- não tem policy nenhuma aqui, então não vê nada (ver REVOKE abaixo).
+CREATE POLICY "biblioteca_digital_select" ON public.biblioteca_digital
+  FOR SELECT USING (auth.uid() IS NOT NULL);
+
+-- Só admin pode criar, editar ou apagar itens da biblioteca.
+CREATE POLICY "biblioteca_digital_write" ON public.biblioteca_digital
+  FOR ALL USING (public.is_admin()) WITH CHECK (public.is_admin());
+
+REVOKE ALL ON public.biblioteca_digital FROM anon;
+GRANT SELECT ON public.biblioteca_digital TO authenticated;
+GRANT ALL ON public.biblioteca_digital TO service_role;
+
+-- Garante que mudanças em biblioteca_digital cheguem via Realtime (mesmo padrão de materials/site_config).
+DO $$
+BEGIN
+  ALTER PUBLICATION supabase_realtime ADD TABLE public.biblioteca_digital;
+EXCEPTION WHEN duplicate_object THEN
+  NULL; -- já estava incluída
+END $$;

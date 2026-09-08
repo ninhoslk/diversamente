@@ -3,6 +3,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react"
 import type { AuthChangeEvent, Session } from "@supabase/supabase-js"
 import type { Material } from "@/lib/catalog"
+import type { ItemBiblioteca } from "@/lib/biblioteca"
 import { CONFIG_PADRAO_SITE, mesclarConfigComPadrao, type SiteConfig } from "@/lib/site-config"
 import { createClient } from "@/lib/supabase/client"
 import { fetchSupabaseSiteConfig, saveSupabaseSiteConfig } from "@/lib/supabase"
@@ -48,11 +49,27 @@ type AppContextValue = {
   siteConfig: SiteConfig
   atualizarSiteConfig: (novaConfig: SiteConfig) => void
   restaurarSiteConfig: () => void
+  bibliotecaItens: ItemBiblioteca[]
+  carregandoBiblioteca: boolean
+  erroBiblioteca: string | null
+  recarregarBiblioteca: () => Promise<void>
+  removerItemBiblioteca: (id: string) => Promise<{ ok: boolean; erro?: string }>
 }
 
 const AppContext = createContext<AppContextValue | null>(null)
 
 const CHAVE_SITE_CONFIG = "diversamente:site-config"
+
+function linhaParaItemBiblioteca(row: Record<string, unknown>): ItemBiblioteca {
+  return {
+    id: row.id as string,
+    titulo: row.titulo as string,
+    descricao: (row.descricao as string) ?? "",
+    tipo: row.tipo as ItemBiblioteca["tipo"],
+    url: (row.url as string) ?? "",
+    criadoEm: ((row.created_at as string) ?? new Date().toISOString()).slice(0, 10),
+  }
+}
 
 function linhaParaMaterial(row: Record<string, unknown>): Material {
   return {
@@ -89,6 +106,9 @@ export function AppProvider({
   const [materiais, setMateriais] = useState<Material[]>([])
   const [carregandoMateriais, setCarregandoMateriais] = useState(true)
   const [erroMateriais, setErroMateriais] = useState<string | null>(null)
+  const [bibliotecaItens, setBibliotecaItens] = useState<ItemBiblioteca[]>([])
+  const [carregandoBiblioteca, setCarregandoBiblioteca] = useState(true)
+  const [erroBiblioteca, setErroBiblioteca] = useState<string | null>(null)
   const [siteConfig, setSiteConfig] = useState<SiteConfig>(() => initialSiteConfig ?? CONFIG_PADRAO_SITE)
 
   const carregarPerfil = useCallback(
@@ -131,6 +151,21 @@ export function AppProvider({
       setErroMateriais("Não foi possível carregar os materiais agora. Tente novamente em instantes.")
     }
     setCarregandoMateriais(false)
+  }, [supabase])
+
+  const recarregarBiblioteca = useCallback(async () => {
+    setCarregandoBiblioteca(true)
+    const { data, error } = await supabase
+      .from("biblioteca_digital")
+      .select("*")
+      .order("created_at", { ascending: false })
+    if (!error && data) {
+      setBibliotecaItens(data.map(linhaParaItemBiblioteca))
+      setErroBiblioteca(null)
+    } else {
+      setErroBiblioteca("Não foi possível carregar a biblioteca digital agora. Tente novamente em instantes.")
+    }
+    setCarregandoBiblioteca(false)
   }, [supabase])
 
   useEffect(() => {
@@ -230,6 +265,31 @@ export function AppProvider({
       supabase.removeChannel(canal)
     }
   }, [usuario, supabase, recarregarMateriais])
+
+  // Biblioteca Digital: qualquer usuário autenticado (sem distinção de papel ou
+  // turma) pode ver a lista — a RLS de biblioteca_digital só exige auth.uid()
+  // não-nulo. Mesmo padrão de carregamento/realtime de "materials".
+  useEffect(() => {
+    if (!usuario) {
+      setBibliotecaItens([])
+      setErroBiblioteca(null)
+      setCarregandoBiblioteca(false)
+      return
+    }
+
+    recarregarBiblioteca()
+
+    const canal = supabase
+      .channel("biblioteca_digital_realtime")
+      .on("postgres_changes", { event: "*", schema: "public", table: "biblioteca_digital" }, () => {
+        recarregarBiblioteca()
+      })
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(canal)
+    }
+  }, [usuario, supabase, recarregarBiblioteca])
 
   // Carrega a lista de usuários apenas quando o logado é admin (a rota já exige isso no servidor).
   useEffect(() => {
@@ -335,6 +395,17 @@ export function AppProvider({
     [],
   )
 
+  const removerItemBiblioteca = useCallback(async (id: string) => {
+    try {
+      const res = await fetch(`/api/biblioteca/${id}`, { method: "DELETE" })
+      const data = await res.json()
+      if (!res.ok || !data.ok) return { ok: false, erro: data.erro ?? "Erro ao remover item da biblioteca." }
+      return { ok: true }
+    } catch {
+      return { ok: false, erro: "Erro de conexão ao remover item da biblioteca." }
+    }
+  }, [])
+
   const atualizarSiteConfig = useCallback((novaConfig: SiteConfig) => {
     setSiteConfig(novaConfig)
     saveSupabaseSiteConfig(novaConfig).catch(() => {})
@@ -373,6 +444,11 @@ export function AppProvider({
       siteConfig,
       atualizarSiteConfig,
       restaurarSiteConfig,
+      bibliotecaItens,
+      carregandoBiblioteca,
+      erroBiblioteca,
+      recarregarBiblioteca,
+      removerItemBiblioteca,
     }),
     [
       usuario,
@@ -392,6 +468,11 @@ export function AppProvider({
       siteConfig,
       atualizarSiteConfig,
       restaurarSiteConfig,
+      bibliotecaItens,
+      carregandoBiblioteca,
+      erroBiblioteca,
+      recarregarBiblioteca,
+      removerItemBiblioteca,
     ],
   )
 

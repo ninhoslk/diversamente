@@ -5,7 +5,7 @@
  */
 export const SITE_URL = "https://editoradiversamente.com.br"
 export const SITE_NAME = "Diversamente"
-export const SITE_NOME_LEGAL = "Editora Diversamente"
+export const SITE_NOME_LEGAL = "Coleção Diversamente"
 export const SITE_TITULO_PADRAO = "Diversamente — Plataforma Educacional"
 export const SITE_DESCRICAO =
   "Trilhas de Educação Infantil, Ensino Fundamental I e Educação Ambiental com PDFs, vídeos, jogos, manuais e projetos para estudantes, educadores e famílias."

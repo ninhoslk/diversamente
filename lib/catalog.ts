@@ -115,7 +115,8 @@ export const TRILHAS: Trilha[] = [
   {
     slug: "educacao-ambiental",
     nome: "Educação Ambiental",
-    descricao: "Trilha especial de sustentabilidade e consciência ambiental, do 1º ao 5º ano.",
+    descricao:
+      "Trilha especial de sustentabilidade e consciência ambiental, do 1º ao 5º ano, em parceria com a EcosBio.",
     gradient: "from-emerald-400 via-green-500 to-lime-400",
     badge: "🌱 Novo",
     tiposExtras: ["manual", "projeto"],

@@ -5,7 +5,7 @@ import { SITE_EMAIL_CONTATO, SITE_NOME_LEGAL } from "@/lib/site-meta"
 export const metadata: Metadata = {
   title: "Termos de Uso",
   description:
-    "Condições de uso da plataforma Diversamente e do material didático, de propriedade exclusiva da Editora Diversamente.",
+    "Condições de uso da plataforma Diversamente e do material didático, de propriedade exclusiva da Coleção Diversamente.",
 }
 
 const ATUALIZADO_EM = "27 de agosto de 2026"
