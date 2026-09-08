@@ -79,17 +79,12 @@ export default function ConteudosPage() {
               key={trilha.slug}
               className={`group relative overflow-hidden rounded-4xl border-0 bg-gradient-to-br ${trilha.gradient} p-[2px] shadow-sm transition-transform hover:-translate-y-1`}
             >
-              {trilha.badge ? (
-                <span className="absolute bottom-4 right-4 z-10 rounded-full bg-white/90 px-3 py-1 text-xs font-semibold text-emerald-700 shadow-sm dark:bg-black/70 dark:text-emerald-300">
-                  {trilha.badge}
-                </span>
-              ) : null}
               {trilha.slug === "educacao-ambiental" ? (
-                <EcosBioBadge className="absolute left-4 top-4 z-10" />
+                <EcosBioBadge className="absolute bottom-4 right-4 z-10" />
               ) : null}
               <Link
                 href={`/conteudos/${trilha.slug}`}
-                className={`flex h-full flex-col gap-6 rounded-4xl bg-card/85 p-7 backdrop-blur-sm ${trilha.badge ? "pb-14" : ""}`}
+                className={`flex h-full flex-col gap-6 rounded-4xl bg-card/85 p-7 backdrop-blur-sm ${trilha.slug === "educacao-ambiental" ? "pb-14" : ""}`}
               >
                 <div className="flex items-start justify-between gap-4">
                   <span className="flex size-12 items-center justify-center rounded-2xl bg-primary/10">

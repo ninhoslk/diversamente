@@ -7,6 +7,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { SiteHeader } from "@/components/site/site-header"
 import { SiteFooter } from "@/components/site/site-footer"
 import { AuthDialog } from "@/components/auth/auth-dialog"
+import { EcosBioBadge } from "@/components/brand/ecosbio-badge"
 import { TRILHAS } from "@/lib/catalog"
 import { useApp } from "@/lib/app-provider"
 
@@ -103,10 +104,8 @@ export default function HomePage() {
                 key={trilha.slug}
                 className={`relative overflow-hidden rounded-3xl border-0 bg-gradient-to-br ${trilha.gradient} p-[2px] shadow-sm`}
               >
-                {trilha.badge ? (
-                  <span className="absolute right-4 top-4 z-10 rounded-full bg-white/90 px-3 py-1 text-xs font-semibold text-emerald-700 shadow-sm dark:bg-black/70 dark:text-emerald-300">
-                    {trilha.badge}
-                  </span>
+                {trilha.slug === "educacao-ambiental" ? (
+                  <EcosBioBadge className="absolute right-4 top-4 z-10" />
                 ) : null}
                 <div className="flex h-full flex-col justify-between gap-6 rounded-3xl bg-card/85 p-7 backdrop-blur-sm">
                   <div className="flex flex-col gap-3">
