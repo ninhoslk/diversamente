@@ -4,7 +4,7 @@ import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { usePathname } from "next/navigation"
 import Link from "next/link"
-import { BookMarked, Clapperboard, Home, LayoutDashboard, LibraryBig, LogOut, User, Users, Palette } from "lucide-react"
+import { BookMarked, ChevronDown, Clapperboard, Home, LayoutDashboard, LibraryBig, LogOut, User, Users, Palette } from "lucide-react"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -33,6 +33,8 @@ export function AppHeader() {
   const router = useRouter()
   const pathname = usePathname()
   const [modalPerfilAberto, setModalPerfilAberto] = useState(false)
+  const [bibliotecasAbertas, setBibliotecasAbertas] = useState(false)
+  const emBiblioteca = pathname.startsWith("/biblioteca") || pathname.startsWith("/atividades")
 
   const iniciais = (usuario?.nome ?? "?")
     .split(" ")
@@ -86,30 +88,56 @@ export function AppHeader() {
                 <LibraryBig className="size-4" aria-hidden="true" />
                 Material Didático
               </Link>
-              <Link
-                href="/biblioteca"
-                className={cn(
-                  "inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition-colors",
-                  pathname.startsWith("/biblioteca")
-                    ? "bg-card text-foreground shadow-sm"
-                    : "text-foreground/70 hover:bg-card/60",
-                )}
+              <div
+                className="relative"
+                onMouseEnter={() => setBibliotecasAbertas(true)}
+                onMouseLeave={() => setBibliotecasAbertas(false)}
               >
-                <BookMarked className="size-4" aria-hidden="true" />
-                Biblioteca Digital
-              </Link>
-              <Link
-                href="/atividades"
-                className={cn(
-                  "inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition-colors",
-                  pathname.startsWith("/atividades")
-                    ? "bg-card text-foreground shadow-sm"
-                    : "text-foreground/70 hover:bg-card/60",
-                )}
-              >
-                <Clapperboard className="size-4" aria-hidden="true" />
-                Biblioteca de Atividades
-              </Link>
+                <button
+                  type="button"
+                  className={cn(
+                    "inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition-colors",
+                    emBiblioteca ? "bg-card text-foreground shadow-sm" : "text-foreground/70 hover:bg-card/60",
+                  )}
+                  aria-haspopup="true"
+                  aria-expanded={bibliotecasAbertas}
+                >
+                  <BookMarked className="size-4" aria-hidden="true" />
+                  Bibliotecas
+                  <ChevronDown className="size-3.5" aria-hidden="true" />
+                </button>
+
+                {bibliotecasAbertas ? (
+                  <div className="absolute left-0 top-full z-50 pt-2">
+                    <div className="glass-strong flex min-w-60 flex-col gap-1 rounded-2xl border p-2 shadow-lg">
+                      <Link
+                        href="/biblioteca"
+                        className={cn(
+                          "inline-flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium transition-colors",
+                          pathname.startsWith("/biblioteca")
+                            ? "bg-card text-foreground shadow-sm"
+                            : "text-foreground/70 hover:bg-card/60",
+                        )}
+                      >
+                        <BookMarked className="size-4" aria-hidden="true" />
+                        Biblioteca Digital
+                      </Link>
+                      <Link
+                        href="/atividades"
+                        className={cn(
+                          "inline-flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium transition-colors",
+                          pathname.startsWith("/atividades")
+                            ? "bg-card text-foreground shadow-sm"
+                            : "text-foreground/70 hover:bg-card/60",
+                        )}
+                      >
+                        <Clapperboard className="size-4" aria-hidden="true" />
+                        Biblioteca de Atividades
+                      </Link>
+                    </div>
+                  </div>
+                ) : null}
+              </div>
               {usuario?.papel === "admin" ? (
                 <>
                   <Link
