@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { useState } from "react"
-import { AlertTriangle, BookMarked, FileText, Gamepad2, PlusCircle, Video, Layers, Users, Palette, Trash2 } from "lucide-react"
+import { AlertTriangle, BookMarked, Clapperboard, FileText, Gamepad2, PlusCircle, Video, Layers, Users, Palette, Trash2 } from "lucide-react"
 import { toast } from "sonner"
 import { Breadcrumbs } from "@/components/app/breadcrumbs"
 import { Button } from "@/components/ui/button"
@@ -20,7 +20,7 @@ import { CATEGORIAS, PUBLICOS, TRILHAS } from "@/lib/catalog"
 import { useApp } from "@/lib/app-provider"
 
 export default function AdminPage() {
-  const { materiais, usuarios, removerMaterial, bibliotecaItens } = useApp()
+  const { materiais, usuarios, removerMaterial, bibliotecaItens, atividadesItens } = useApp()
   const [materialParaRemover, setMaterialParaRemover] = useState<{ id: string; titulo: string } | null>(null)
 
   const totalPdf = materiais.filter((m) => m.tipo === "pdf").length
@@ -32,6 +32,7 @@ export default function AdminPage() {
     { label: "Vídeos publicados", valor: totalVideo, Icon: Video },
     { label: "Jogos publicados", valor: totalJogo, Icon: Gamepad2 },
     { label: "Itens na Biblioteca Digital", valor: bibliotecaItens.length, Icon: BookMarked },
+    { label: "Itens na Biblioteca de Atividades", valor: atividadesItens.length, Icon: Clapperboard },
     { label: "Contas de Acesso", valor: usuarios.length, Icon: Users },
   ]
 
@@ -76,6 +77,12 @@ export default function AdminPage() {
             <Link href="/admin/biblioteca">
               <BookMarked className="size-4 text-primary" aria-hidden="true" />
               Biblioteca Digital
+            </Link>
+          </Button>
+          <Button asChild variant="outline" className="rounded-full">
+            <Link href="/admin/atividades">
+              <Clapperboard className="size-4 text-primary" aria-hidden="true" />
+              Biblioteca de Atividades
             </Link>
           </Button>
           <Button asChild className="rounded-full">

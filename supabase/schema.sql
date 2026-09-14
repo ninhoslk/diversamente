@@ -297,3 +297,48 @@ BEGIN
 EXCEPTION WHEN duplicate_object THEN
   NULL; -- já estava incluída
 END $$;
+
+
+-- ---------------------------------------------------
+-- 6. BIBLIOTECA DE ATIVIDADES (vídeos e links da Coleção Diversamente)
+-- ---------------------------------------------------
+-- Mesmo modelo de biblioteca_digital (lista única, sem trilha/categoria/turma,
+-- visível para qualquer usuário autenticado) — só muda o tipo de conteúdo:
+-- 'video' (tocado inline na página, mesmo player de materials) ou 'link'
+-- (redireciona para uma nova aba, igual à biblioteca_digital).
+CREATE TABLE IF NOT EXISTS public.biblioteca_atividades (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  titulo TEXT NOT NULL,
+  descricao TEXT,
+  tipo TEXT NOT NULL CHECK (tipo IN ('video', 'link')),
+  url TEXT NOT NULL,
+  created_by UUID REFERENCES auth.users(id) ON DELETE SET NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE public.biblioteca_atividades ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "biblioteca_atividades_select" ON public.biblioteca_atividades;
+DROP POLICY IF EXISTS "biblioteca_atividades_write" ON public.biblioteca_atividades;
+
+-- Qualquer usuário autenticado pode ler a lista inteira — sem restrição de
+-- papel/turma. Visitante não-autenticado (anon) não tem policy nenhuma aqui,
+-- então não vê nada (ver REVOKE abaixo).
+CREATE POLICY "biblioteca_atividades_select" ON public.biblioteca_atividades
+  FOR SELECT USING (auth.uid() IS NOT NULL);
+
+-- Só admin pode criar, editar ou apagar itens.
+CREATE POLICY "biblioteca_atividades_write" ON public.biblioteca_atividades
+  FOR ALL USING (public.is_admin()) WITH CHECK (public.is_admin());
+
+REVOKE ALL ON public.biblioteca_atividades FROM anon;
+GRANT SELECT ON public.biblioteca_atividades TO authenticated;
+GRANT ALL ON public.biblioteca_atividades TO service_role;
+
+-- Garante que mudanças em biblioteca_atividades cheguem via Realtime (mesmo padrão das demais tabelas).
+DO $$
+BEGIN
+  ALTER PUBLICATION supabase_realtime ADD TABLE public.biblioteca_atividades;
+EXCEPTION WHEN duplicate_object THEN
+  NULL; -- já estava incluída
+END $$;

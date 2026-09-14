@@ -8,7 +8,7 @@ export default function robots(): MetadataRoute.Robots {
       allow: "/",
       // Áreas privadas atrás de login (RouteGuard) e rotas técnicas — não têm
       // conteúdo público para indexar e não devem aparecer em resultados de busca.
-      disallow: ["/conteudos", "/biblioteca", "/admin", "/entrar", "/api"],
+      disallow: ["/conteudos", "/biblioteca", "/atividades", "/admin", "/entrar", "/api"],
     },
     sitemap: `${SITE_URL}/sitemap.xml`,
     host: SITE_URL,

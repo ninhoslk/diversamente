@@ -4,6 +4,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState } 
 import type { AuthChangeEvent, Session } from "@supabase/supabase-js"
 import type { Material } from "@/lib/catalog"
 import type { ItemBiblioteca } from "@/lib/biblioteca"
+import type { ItemAtividade } from "@/lib/atividades"
 import { CONFIG_PADRAO_SITE, mesclarConfigComPadrao, type SiteConfig } from "@/lib/site-config"
 import { createClient } from "@/lib/supabase/client"
 import { fetchSupabaseSiteConfig, saveSupabaseSiteConfig } from "@/lib/supabase"
@@ -54,6 +55,11 @@ type AppContextValue = {
   erroBiblioteca: string | null
   recarregarBiblioteca: () => Promise<void>
   removerItemBiblioteca: (id: string) => Promise<{ ok: boolean; erro?: string }>
+  atividadesItens: ItemAtividade[]
+  carregandoAtividades: boolean
+  erroAtividades: string | null
+  recarregarAtividades: () => Promise<void>
+  removerItemAtividade: (id: string) => Promise<{ ok: boolean; erro?: string }>
 }
 
 const AppContext = createContext<AppContextValue | null>(null)
@@ -66,6 +72,17 @@ function linhaParaItemBiblioteca(row: Record<string, unknown>): ItemBiblioteca {
     titulo: row.titulo as string,
     descricao: (row.descricao as string) ?? "",
     tipo: row.tipo as ItemBiblioteca["tipo"],
+    url: (row.url as string) ?? "",
+    criadoEm: ((row.created_at as string) ?? new Date().toISOString()).slice(0, 10),
+  }
+}
+
+function linhaParaItemAtividade(row: Record<string, unknown>): ItemAtividade {
+  return {
+    id: row.id as string,
+    titulo: row.titulo as string,
+    descricao: (row.descricao as string) ?? "",
+    tipo: row.tipo as ItemAtividade["tipo"],
     url: (row.url as string) ?? "",
     criadoEm: ((row.created_at as string) ?? new Date().toISOString()).slice(0, 10),
   }
@@ -109,6 +126,9 @@ export function AppProvider({
   const [bibliotecaItens, setBibliotecaItens] = useState<ItemBiblioteca[]>([])
   const [carregandoBiblioteca, setCarregandoBiblioteca] = useState(true)
   const [erroBiblioteca, setErroBiblioteca] = useState<string | null>(null)
+  const [atividadesItens, setAtividadesItens] = useState<ItemAtividade[]>([])
+  const [carregandoAtividades, setCarregandoAtividades] = useState(true)
+  const [erroAtividades, setErroAtividades] = useState<string | null>(null)
   const [siteConfig, setSiteConfig] = useState<SiteConfig>(() => initialSiteConfig ?? CONFIG_PADRAO_SITE)
 
   const carregarPerfil = useCallback(
@@ -166,6 +186,21 @@ export function AppProvider({
       setErroBiblioteca("Não foi possível carregar a biblioteca digital agora. Tente novamente em instantes.")
     }
     setCarregandoBiblioteca(false)
+  }, [supabase])
+
+  const recarregarAtividades = useCallback(async () => {
+    setCarregandoAtividades(true)
+    const { data, error } = await supabase
+      .from("biblioteca_atividades")
+      .select("*")
+      .order("created_at", { ascending: false })
+    if (!error && data) {
+      setAtividadesItens(data.map(linhaParaItemAtividade))
+      setErroAtividades(null)
+    } else {
+      setErroAtividades("Não foi possível carregar a biblioteca de atividades agora. Tente novamente em instantes.")
+    }
+    setCarregandoAtividades(false)
   }, [supabase])
 
   useEffect(() => {
@@ -291,6 +326,30 @@ export function AppProvider({
     }
   }, [usuario, supabase, recarregarBiblioteca])
 
+  // Biblioteca de Atividades: mesmo padrão da Biblioteca Digital (qualquer
+  // usuário autenticado, sem distinção de papel/turma).
+  useEffect(() => {
+    if (!usuario) {
+      setAtividadesItens([])
+      setErroAtividades(null)
+      setCarregandoAtividades(false)
+      return
+    }
+
+    recarregarAtividades()
+
+    const canal = supabase
+      .channel("biblioteca_atividades_realtime")
+      .on("postgres_changes", { event: "*", schema: "public", table: "biblioteca_atividades" }, () => {
+        recarregarAtividades()
+      })
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(canal)
+    }
+  }, [usuario, supabase, recarregarAtividades])
+
   // Carrega a lista de usuários apenas quando o logado é admin (a rota já exige isso no servidor).
   useEffect(() => {
     if (usuario?.papel === "admin") {
@@ -406,6 +465,17 @@ export function AppProvider({
     }
   }, [])
 
+  const removerItemAtividade = useCallback(async (id: string) => {
+    try {
+      const res = await fetch(`/api/atividades/${id}`, { method: "DELETE" })
+      const data = await res.json()
+      if (!res.ok || !data.ok) return { ok: false, erro: data.erro ?? "Erro ao remover item da biblioteca de atividades." }
+      return { ok: true }
+    } catch {
+      return { ok: false, erro: "Erro de conexão ao remover item da biblioteca de atividades." }
+    }
+  }, [])
+
   const atualizarSiteConfig = useCallback((novaConfig: SiteConfig) => {
     setSiteConfig(novaConfig)
     saveSupabaseSiteConfig(novaConfig).catch(() => {})
@@ -449,6 +519,11 @@ export function AppProvider({
       erroBiblioteca,
       recarregarBiblioteca,
       removerItemBiblioteca,
+      atividadesItens,
+      carregandoAtividades,
+      erroAtividades,
+      recarregarAtividades,
+      removerItemAtividade,
     }),
     [
       usuario,
@@ -473,6 +548,11 @@ export function AppProvider({
       erroBiblioteca,
       recarregarBiblioteca,
       removerItemBiblioteca,
+      atividadesItens,
+      carregandoAtividades,
+      erroAtividades,
+      recarregarAtividades,
+      removerItemAtividade,
     ],
   )
 

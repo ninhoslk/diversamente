@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { ArrowRight, BookMarked, FolderOpen, Lock } from "lucide-react"
+import { ArrowRight, BookMarked, Clapperboard, FolderOpen, Lock } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Card } from "@/components/ui/card"
 import { EcosBioBadge } from "@/components/brand/ecosbio-badge"
@@ -9,7 +9,7 @@ import { getCategorias, TRILHAS } from "@/lib/catalog"
 import { useApp } from "@/lib/app-provider"
 
 export default function ConteudosPage() {
-  const { usuario, materiais, bibliotecaItens } = useApp()
+  const { usuario, materiais, bibliotecaItens, atividadesItens } = useApp()
 
   const primeiroNome = usuario?.nome.split(" ")[0] ?? ""
 
@@ -60,6 +60,31 @@ export default function ConteudosPage() {
               <h2 className="text-2xl font-semibold">Biblioteca Digital</h2>
               <p className="text-sm leading-relaxed text-muted-foreground">
                 Artigos, folhetos e livros escritos pela Coleção Diversamente, para consulta de toda a comunidade.
+              </p>
+            </div>
+
+            <span className="mt-auto inline-flex items-center gap-1.5 text-sm font-medium text-primary">
+              Abrir biblioteca
+              <ArrowRight className="size-4 transition-transform group-hover:translate-x-1" aria-hidden="true" />
+            </span>
+          </Link>
+        </Card>
+
+        <Card className="group relative overflow-hidden rounded-4xl border-0 bg-gradient-to-br from-sky-400 via-cyan-500 to-teal-400 p-[2px] shadow-sm transition-transform hover:-translate-y-1">
+          <Link href="/atividades" className="flex h-full flex-col gap-6 rounded-4xl bg-card/85 p-7 backdrop-blur-sm">
+            <div className="flex items-start justify-between gap-4">
+              <span className="flex size-12 items-center justify-center rounded-2xl bg-primary/10">
+                <Clapperboard className="size-6 text-primary" aria-hidden="true" />
+              </span>
+              <Badge variant="secondary" className="rounded-full font-normal">
+                {atividadesItens.length} {atividadesItens.length === 1 ? "item" : "itens"}
+              </Badge>
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <h2 className="text-2xl font-semibold">Biblioteca de Atividades</h2>
+              <p className="text-sm leading-relaxed text-muted-foreground">
+                Vídeos e links de atividades da Coleção Diversamente, para consulta de toda a comunidade.
               </p>
             </div>
 
