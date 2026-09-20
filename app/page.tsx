@@ -8,6 +8,7 @@ import { SiteHeader } from "@/components/site/site-header"
 import { SiteFooter } from "@/components/site/site-footer"
 import { AuthDialog } from "@/components/auth/auth-dialog"
 import { EcosBioBadge } from "@/components/brand/ecosbio-badge"
+import { EmConstrucaoBadge } from "@/components/brand/em-construcao-badge"
 import { TRILHAS } from "@/lib/catalog"
 import { useApp } from "@/lib/app-provider"
 
@@ -109,6 +110,7 @@ export default function HomePage() {
                 ) : null}
                 <div className="flex h-full flex-col justify-between gap-6 rounded-3xl bg-card/85 p-7 backdrop-blur-sm">
                   <div className="flex flex-col gap-3">
+                    {trilha.emConstrucao ? <EmConstrucaoBadge className="w-fit" /> : null}
                     <h3 className="text-2xl font-semibold">{trilha.nome}</h3>
                     <p className="text-sm leading-relaxed text-muted-foreground">{trilha.descricao}</p>
                   </div>

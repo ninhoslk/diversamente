@@ -38,11 +38,11 @@ export function SiteFooter() {
           <h2 className="text-sm font-semibold">Fale com a gente</h2>
           <div className="flex flex-col gap-3">
             <a
-              href="mailto:ecosbioambiental@gmail.com"
+              href="mailto:editoradiversamente@gmail.com"
               className="group/button inline-flex h-10 shrink-0 items-center justify-start gap-1.5 rounded-full border border-border bg-background px-4 text-sm font-medium whitespace-nowrap transition-all outline-none select-none hover:bg-muted hover:text-foreground bg-card/80"
             >
               <Mail className="size-4 pointer-events-none shrink-0" aria-hidden="true" />
-              ecosbioambiental@gmail.com
+              editoradiversamente@gmail.com
             </a>
             <a
               href="https://wa.me/5519992101212"

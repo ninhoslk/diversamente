@@ -98,7 +98,7 @@ const JSON_LD = {
       url: SITE_URL,
       logo: `${SITE_URL}/icon.svg`,
       description: SITE_DESCRICAO,
-      email: 'ecosbioambiental@gmail.com',
+      email: 'editoradiversamente@gmail.com',
       sameAs: ['https://wa.me/5519992101212'],
     },
     {

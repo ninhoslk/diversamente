@@ -5,6 +5,7 @@ import { ArrowRight, FolderOpen, Lock } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Card } from "@/components/ui/card"
 import { EcosBioBadge } from "@/components/brand/ecosbio-badge"
+import { EmConstrucaoBadge } from "@/components/brand/em-construcao-badge"
 import { getCategorias, TRILHAS } from "@/lib/catalog"
 import { useApp } from "@/lib/app-provider"
 
@@ -57,9 +58,10 @@ export default function ConteudosPage() {
               {trilha.slug === "educacao-ambiental" ? (
                 <EcosBioBadge className="absolute bottom-4 right-4 z-10" />
               ) : null}
+              {trilha.emConstrucao ? <EmConstrucaoBadge className="absolute bottom-4 right-4 z-10" /> : null}
               <Link
                 href={`/conteudos/${trilha.slug}`}
-                className={`flex h-full flex-col gap-6 rounded-4xl bg-card/85 p-7 backdrop-blur-sm ${trilha.slug === "educacao-ambiental" ? "pb-14" : ""}`}
+                className={`flex h-full flex-col gap-6 rounded-4xl bg-card/85 p-7 backdrop-blur-sm ${trilha.slug === "educacao-ambiental" || trilha.emConstrucao ? "pb-14" : ""}`}
               >
                 <div className="flex items-start justify-between gap-4">
                   <span className="flex size-12 items-center justify-center rounded-2xl bg-primary/10">

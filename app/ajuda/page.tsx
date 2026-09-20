@@ -63,7 +63,7 @@ export default function AjudaPage() {
                 </a>
               </Button>
               <Button asChild size="lg" variant="outline" className="w-full justify-center text-center rounded-full bg-card/80">
-                <a href="mailto:ecosbioambiental@gmail.com" className="flex items-center justify-center gap-2">
+                <a href="mailto:editoradiversamente@gmail.com" className="flex items-center justify-center gap-2">
                   <Mail className="size-4 shrink-0" aria-hidden="true" />
                   <span>Enviar um e-mail</span>
                 </a>

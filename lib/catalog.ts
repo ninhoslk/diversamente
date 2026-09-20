@@ -11,6 +11,8 @@ export type Trilha = {
   badge?: string
   /** Tipos de material extras (além de pdf/vídeo/jogo) disponíveis só nesta trilha. */
   tiposExtras?: TipoMaterial[]
+  /** Exibe o selo "Em construção" no card da trilha (conteúdo ainda não disponível). */
+  emConstrucao?: boolean
 }
 
 export type Categoria = {
@@ -104,6 +106,7 @@ export const TRILHAS: Trilha[] = [
     nome: "Educação Infantil Regular",
     descricao: "Berçário, Maternal e Pré-alfabetização com materiais lúdicos e sensoriais.",
     gradient: "from-holo-yellow via-holo-mint to-holo-blue",
+    emConstrucao: true,
   },
   {
     slug: "fundamental-1",

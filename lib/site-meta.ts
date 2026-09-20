@@ -9,5 +9,5 @@ export const SITE_NOME_LEGAL = "Coleção Diversamente"
 export const SITE_TITULO_PADRAO = "Diversamente — Plataforma Educacional"
 export const SITE_DESCRICAO =
   "Trilhas de Educação Infantil, Ensino Fundamental I e Educação Ambiental com PDFs, vídeos, jogos, manuais e projetos para estudantes, educadores e famílias."
-export const SITE_EMAIL_CONTATO = "ecosbioambiental@gmail.com"
+export const SITE_EMAIL_CONTATO = "editoradiversamente@gmail.com"
 export const SITE_WHATSAPP = "https://wa.me/5519992101212"
