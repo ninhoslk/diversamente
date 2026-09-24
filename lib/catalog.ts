@@ -141,6 +141,12 @@ export const CATEGORIAS: Categoria[] = [
     trilha: "educacao-infantil",
     publicos: ["crianca", "educador", "familia"],
   },
+  // Trilha de Educação Infantil Regular — ainda em construção (ver TRILHAS
+  // acima), mas já libera estas categorias para permitir o upload/organização
+  // de material enquanto o restante da trilha é preparado.
+  { slug: "maternal-1", nome: "Maternal 1", trilha: "educacao-infantil-regular", publicos: ["crianca", "educador", "familia"] },
+  { slug: "maternal-2", nome: "Maternal 2", trilha: "educacao-infantil-regular", publicos: ["crianca", "educador", "familia"] },
+
   { slug: "1-ano", nome: "1º Ano", trilha: "fundamental-1", publicos: ["aluno", "educador", "familia"] },
   { slug: "2-ano", nome: "2º Ano", trilha: "fundamental-1", publicos: ["aluno", "educador", "familia"] },
   { slug: "3-ano", nome: "3º Ano", trilha: "fundamental-1", publicos: ["aluno", "educador", "familia"] },
