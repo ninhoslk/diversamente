@@ -342,3 +342,51 @@ BEGIN
 EXCEPTION WHEN duplicate_object THEN
   NULL; -- já estava incluída
 END $$;
+
+
+-- ---------------------------------------------------
+-- 7. CERTIFICADOS (verificação pública por link único)
+-- ---------------------------------------------------
+-- Cada certificado tem um código único que vira a URL pública de verificação
+-- (/certificados/<codigo>) — qualquer pessoa com o link acessa a página de
+-- verificação (imagens de frente/verso + botão de download do Drive), sem
+-- precisar estar logada. As imagens NÃO ficam no Storage do Supabase (ficam
+-- hospedadas em outro serviço, só a URL é guardada aqui) para não gastar cota.
+--
+-- A tabela em si é 100% restrita a admin (nenhuma policy de leitura pública) —
+-- a página pública nunca consulta esta tabela pelo cliente; ela busca no
+-- servidor com a service_role key (app/certificados/[codigo]/page.tsx), que
+-- ignora RLS e retorna só o registro cujo código bate exatamente. Sem código
+-- exato não há como listar ou descobrir certificados.
+CREATE TABLE IF NOT EXISTS public.certificados (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  codigo TEXT NOT NULL UNIQUE CHECK (codigo ~ '^[A-Za-z0-9-]{3,80}$'),
+  titulo TEXT,
+  imagem_frente_url TEXT NOT NULL,
+  imagem_verso_url TEXT NOT NULL,
+  drive_url TEXT NOT NULL,
+  created_by UUID REFERENCES auth.users(id) ON DELETE SET NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE public.certificados ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "certificados_admin_all" ON public.certificados;
+
+-- Único acesso via RLS é admin (leitura e escrita) — o painel /admin/certificados
+-- lê direto pelo cliente autenticado como admin; a verificação pública passa por
+-- fora da RLS (service_role), então não precisa e não deve ter policy própria.
+CREATE POLICY "certificados_admin_all" ON public.certificados
+  FOR ALL USING (public.is_admin()) WITH CHECK (public.is_admin());
+
+REVOKE ALL ON public.certificados FROM anon;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.certificados TO authenticated;
+GRANT ALL ON public.certificados TO service_role;
+
+-- Garante que mudanças em certificados cheguem via Realtime (mesmo padrão das demais tabelas).
+DO $$
+BEGIN
+  ALTER PUBLICATION supabase_realtime ADD TABLE public.certificados;
+EXCEPTION WHEN duplicate_object THEN
+  NULL; -- já estava incluída
+END $$;

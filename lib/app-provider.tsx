@@ -5,6 +5,7 @@ import type { AuthChangeEvent, Session } from "@supabase/supabase-js"
 import type { Material } from "@/lib/catalog"
 import type { ItemBiblioteca } from "@/lib/biblioteca"
 import type { ItemAtividade } from "@/lib/atividades"
+import type { Certificado } from "@/lib/certificados"
 import { CONFIG_PADRAO_SITE, mesclarConfigComPadrao, type SiteConfig } from "@/lib/site-config"
 import { createClient } from "@/lib/supabase/client"
 import { fetchSupabaseSiteConfig, saveSupabaseSiteConfig } from "@/lib/supabase"
@@ -60,6 +61,11 @@ type AppContextValue = {
   erroAtividades: string | null
   recarregarAtividades: () => Promise<void>
   removerItemAtividade: (id: string) => Promise<{ ok: boolean; erro?: string }>
+  certificados: Certificado[]
+  carregandoCertificados: boolean
+  erroCertificados: string | null
+  recarregarCertificados: () => Promise<void>
+  removerCertificado: (id: string) => Promise<{ ok: boolean; erro?: string }>
 }
 
 const AppContext = createContext<AppContextValue | null>(null)
@@ -84,6 +90,18 @@ function linhaParaItemAtividade(row: Record<string, unknown>): ItemAtividade {
     descricao: (row.descricao as string) ?? "",
     tipo: row.tipo as ItemAtividade["tipo"],
     url: (row.url as string) ?? "",
+    criadoEm: ((row.created_at as string) ?? new Date().toISOString()).slice(0, 10),
+  }
+}
+
+function linhaParaCertificado(row: Record<string, unknown>): Certificado {
+  return {
+    id: row.id as string,
+    codigo: row.codigo as string,
+    titulo: (row.titulo as string) ?? "",
+    imagemFrenteUrl: (row.imagem_frente_url as string) ?? "",
+    imagemVersoUrl: (row.imagem_verso_url as string) ?? "",
+    driveUrl: (row.drive_url as string) ?? "",
     criadoEm: ((row.created_at as string) ?? new Date().toISOString()).slice(0, 10),
   }
 }
@@ -129,6 +147,9 @@ export function AppProvider({
   const [atividadesItens, setAtividadesItens] = useState<ItemAtividade[]>([])
   const [carregandoAtividades, setCarregandoAtividades] = useState(true)
   const [erroAtividades, setErroAtividades] = useState<string | null>(null)
+  const [certificados, setCertificados] = useState<Certificado[]>([])
+  const [carregandoCertificados, setCarregandoCertificados] = useState(true)
+  const [erroCertificados, setErroCertificados] = useState<string | null>(null)
   const [siteConfig, setSiteConfig] = useState<SiteConfig>(() => initialSiteConfig ?? CONFIG_PADRAO_SITE)
 
   const carregarPerfil = useCallback(
@@ -201,6 +222,21 @@ export function AppProvider({
       setErroAtividades("Não foi possível carregar a biblioteca de atividades agora. Tente novamente em instantes.")
     }
     setCarregandoAtividades(false)
+  }, [supabase])
+
+  const recarregarCertificados = useCallback(async () => {
+    setCarregandoCertificados(true)
+    const { data, error } = await supabase
+      .from("certificados")
+      .select("*")
+      .order("created_at", { ascending: false })
+    if (!error && data) {
+      setCertificados(data.map(linhaParaCertificado))
+      setErroCertificados(null)
+    } else {
+      setErroCertificados("Não foi possível carregar os certificados agora. Tente novamente em instantes.")
+    }
+    setCarregandoCertificados(false)
   }, [supabase])
 
   useEffect(() => {
@@ -360,6 +396,31 @@ export function AppProvider({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [usuario?.papel])
 
+  // Certificados: painel admin-only (a RLS de "certificados" só libera para
+  // is_admin(), então nem tenta buscar para os demais papéis — evitaria só um
+  // erro de permissão sem necessidade).
+  useEffect(() => {
+    if (usuario?.papel !== "admin") {
+      setCertificados([])
+      setErroCertificados(null)
+      setCarregandoCertificados(false)
+      return
+    }
+
+    recarregarCertificados()
+
+    const canal = supabase
+      .channel("certificados_realtime")
+      .on("postgres_changes", { event: "*", schema: "public", table: "certificados" }, () => {
+        recarregarCertificados()
+      })
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(canal)
+    }
+  }, [usuario?.papel, supabase, recarregarCertificados])
+
   const entrar = useCallback(
     async (email: string, senha: string) => {
       const { data, error } = await supabase.auth.signInWithPassword({ email: email.trim(), password: senha })
@@ -476,6 +537,17 @@ export function AppProvider({
     }
   }, [])
 
+  const removerCertificado = useCallback(async (id: string) => {
+    try {
+      const res = await fetch(`/api/certificados/${id}`, { method: "DELETE" })
+      const data = await res.json()
+      if (!res.ok || !data.ok) return { ok: false, erro: data.erro ?? "Erro ao remover certificado." }
+      return { ok: true }
+    } catch {
+      return { ok: false, erro: "Erro de conexão ao remover certificado." }
+    }
+  }, [])
+
   const atualizarSiteConfig = useCallback((novaConfig: SiteConfig) => {
     setSiteConfig(novaConfig)
     saveSupabaseSiteConfig(novaConfig).catch(() => {})
@@ -524,6 +596,11 @@ export function AppProvider({
       erroAtividades,
       recarregarAtividades,
       removerItemAtividade,
+      certificados,
+      carregandoCertificados,
+      erroCertificados,
+      recarregarCertificados,
+      removerCertificado,
     }),
     [
       usuario,
@@ -553,6 +630,11 @@ export function AppProvider({
       erroAtividades,
       recarregarAtividades,
       removerItemAtividade,
+      certificados,
+      carregandoCertificados,
+      erroCertificados,
+      recarregarCertificados,
+      removerCertificado,
     ],
   )
 
