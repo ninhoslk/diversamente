@@ -59,29 +59,35 @@ export default async function CertificadoPage({
       titulo={certificado.titulo || "Certificado"}
       subtitulo={`Código de verificação: ${certificado.codigo}`}
     >
-      <div className="mx-auto flex max-w-5xl flex-col items-center gap-8">
+      <div className="mx-auto flex w-full flex-col items-center gap-8">
         <span className="glass inline-flex items-center gap-2 rounded-full border px-4 py-1.5 text-xs font-medium text-black">
           <ShieldCheck className="size-3.5" aria-hidden="true" />
           Certificado verificado — Coleção Diversamente
         </span>
 
-        <div className="grid w-full gap-5 sm:grid-cols-2">
-          <img
-            src={certificado.imagem_frente_url}
-            alt={`Certificado ${certificado.codigo} — frente`}
-            loading="eager"
-            fetchPriority="high"
-            decoding="async"
-            className="w-full rounded-3xl border shadow-sm"
-          />
-          <img
-            src={certificado.imagem_verso_url}
-            alt={`Certificado ${certificado.codigo} — verso`}
-            loading="lazy"
-            decoding="async"
-            className="w-full rounded-3xl border shadow-sm"
-          />
+        <div className="flex w-full flex-col gap-8">
+          <a href={certificado.imagem_frente_url} target="_blank" rel="noopener noreferrer">
+            <img
+              src={certificado.imagem_frente_url}
+              alt={`Certificado ${certificado.codigo} — frente`}
+              loading="eager"
+              fetchPriority="high"
+              decoding="async"
+              className="w-full rounded-3xl border shadow-sm"
+            />
+          </a>
+          <a href={certificado.imagem_verso_url} target="_blank" rel="noopener noreferrer">
+            <img
+              src={certificado.imagem_verso_url}
+              alt={`Certificado ${certificado.codigo} — verso`}
+              loading="lazy"
+              decoding="async"
+              className="w-full rounded-3xl border shadow-sm"
+            />
+          </a>
         </div>
+
+        <p className="-mt-4 text-xs text-muted-foreground">Clique em uma imagem para abri-la em tamanho original.</p>
 
         <Button asChild size="lg" className="rounded-full px-8">
           <a href={certificado.drive_url} target="_blank" rel="noopener noreferrer">
