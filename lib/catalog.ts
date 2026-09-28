@@ -146,8 +146,8 @@ export const CATEGORIAS: Categoria[] = [
   // de material enquanto o restante da trilha é preparado.
   { slug: "maternal-1", nome: "Maternal 1", trilha: "educacao-infantil-regular", publicos: ["crianca", "educador", "familia"] },
   { slug: "maternal-2", nome: "Maternal 2", trilha: "educacao-infantil-regular", publicos: ["crianca", "educador", "familia"] },
-  { slug: "pre-1", nome: "Pré 1", trilha: "educacao-infantil-regular", publicos: ["crianca", "educador", "familia"] },
-  { slug: "pre-2", nome: "Pré 2", trilha: "educacao-infantil-regular", publicos: ["crianca", "educador", "familia"] },
+  { slug: "pre-1", nome: "Pré-alfabetização 1", trilha: "educacao-infantil-regular", publicos: ["crianca", "educador", "familia"] },
+  { slug: "pre-2", nome: "Pré-alfabetização 2", trilha: "educacao-infantil-regular", publicos: ["crianca", "educador", "familia"] },
 
   { slug: "1-ano", nome: "1º Ano", trilha: "fundamental-1", publicos: ["aluno", "educador", "familia"] },
   { slug: "2-ano", nome: "2º Ano", trilha: "fundamental-1", publicos: ["aluno", "educador", "familia"] },
