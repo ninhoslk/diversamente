@@ -66,6 +66,10 @@ type AppContextValue = {
   erroCertificados: string | null
   recarregarCertificados: () => Promise<void>
   removerCertificado: (id: string) => Promise<{ ok: boolean; erro?: string }>
+  atualizarCertificado: (
+    id: string,
+    dados: { codigo: string; titulo: string; imagemFrenteUrl: string; imagemVersoUrl: string; driveUrl: string },
+  ) => Promise<{ ok: boolean; erro?: string }>
 }
 
 const AppContext = createContext<AppContextValue | null>(null)
@@ -548,6 +552,27 @@ export function AppProvider({
     }
   }, [])
 
+  const atualizarCertificado = useCallback(
+    async (
+      id: string,
+      dados: { codigo: string; titulo: string; imagemFrenteUrl: string; imagemVersoUrl: string; driveUrl: string },
+    ) => {
+      try {
+        const res = await fetch(`/api/certificados/${id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(dados),
+        })
+        const data = await res.json()
+        if (!res.ok || !data.ok) return { ok: false, erro: data.erro ?? "Erro ao atualizar certificado." }
+        return { ok: true }
+      } catch {
+        return { ok: false, erro: "Erro de conexão ao atualizar certificado." }
+      }
+    },
+    [],
+  )
+
   const atualizarSiteConfig = useCallback((novaConfig: SiteConfig) => {
     setSiteConfig(novaConfig)
     saveSupabaseSiteConfig(novaConfig).catch(() => {})
@@ -601,6 +626,7 @@ export function AppProvider({
       erroCertificados,
       recarregarCertificados,
       removerCertificado,
+      atualizarCertificado,
     }),
     [
       usuario,
@@ -635,6 +661,7 @@ export function AppProvider({
       erroCertificados,
       recarregarCertificados,
       removerCertificado,
+      atualizarCertificado,
     ],
   )
 

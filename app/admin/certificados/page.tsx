@@ -1,8 +1,8 @@
 "use client"
 
-import { useState } from "react"
+import { useMemo, useState } from "react"
 import Link from "next/link"
-import { AlertTriangle, Award, ExternalLink, PlusCircle, RefreshCw, Trash2 } from "lucide-react"
+import { AlertTriangle, Award, ExternalLink, Pencil, PlusCircle, RefreshCw, Search, Trash2 } from "lucide-react"
 import { toast } from "sonner"
 import { Breadcrumbs } from "@/components/app/breadcrumbs"
 import { Button } from "@/components/ui/button"
@@ -18,6 +18,7 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import type { Certificado } from "@/lib/certificados"
 import { useApp } from "@/lib/app-provider"
 
 function gerarCodigoSugerido() {
@@ -25,7 +26,7 @@ function gerarCodigoSugerido() {
 }
 
 export default function AdminCertificadosPage() {
-  const { certificados, recarregarCertificados, removerCertificado } = useApp()
+  const { certificados, recarregarCertificados, removerCertificado, atualizarCertificado } = useApp()
 
   const [codigo, setCodigo] = useState("")
   const [titulo, setTitulo] = useState("")
@@ -35,6 +36,64 @@ export default function AdminCertificadosPage() {
   const [enviando, setEnviando] = useState(false)
   const [erro, setErro] = useState<string | null>(null)
   const [certificadoParaRemover, setCertificadoParaRemover] = useState<{ id: string; codigo: string } | null>(null)
+
+  const [busca, setBusca] = useState("")
+  const certificadosFiltrados = useMemo(() => {
+    const termo = busca.trim().toLowerCase()
+    if (!termo) return certificados
+    return certificados.filter(
+      (c) => c.codigo.toLowerCase().includes(termo) || (c.titulo ?? "").toLowerCase().includes(termo),
+    )
+  }, [certificados, busca])
+
+  const [certificadoParaEditar, setCertificadoParaEditar] = useState<Certificado | null>(null)
+  const [edCodigo, setEdCodigo] = useState("")
+  const [edTitulo, setEdTitulo] = useState("")
+  const [edImagemFrenteUrl, setEdImagemFrenteUrl] = useState("")
+  const [edImagemVersoUrl, setEdImagemVersoUrl] = useState("")
+  const [edDriveUrl, setEdDriveUrl] = useState("")
+  const [edEnviando, setEdEnviando] = useState(false)
+  const [edErro, setEdErro] = useState<string | null>(null)
+
+  function abrirEdicao(c: Certificado) {
+    setCertificadoParaEditar(c)
+    setEdCodigo(c.codigo)
+    setEdTitulo(c.titulo ?? "")
+    setEdImagemFrenteUrl(c.imagemFrenteUrl)
+    setEdImagemVersoUrl(c.imagemVersoUrl)
+    setEdDriveUrl(c.driveUrl)
+    setEdErro(null)
+  }
+
+  async function onSubmitEdicao(e: React.FormEvent) {
+    e.preventDefault()
+    setEdErro(null)
+    if (!certificadoParaEditar) return
+
+    if (!edCodigo.trim()) return setEdErro("Informe o código do certificado.")
+    if (!edImagemFrenteUrl.trim()) return setEdErro("Informe o link da imagem de frente.")
+    if (!edImagemVersoUrl.trim()) return setEdErro("Informe o link da imagem de verso.")
+    if (!edDriveUrl.trim()) return setEdErro("Informe o link do Google Drive.")
+
+    setEdEnviando(true)
+    const resultado = await atualizarCertificado(certificadoParaEditar.id, {
+      codigo: edCodigo.trim(),
+      titulo: edTitulo.trim(),
+      imagemFrenteUrl: edImagemFrenteUrl.trim(),
+      imagemVersoUrl: edImagemVersoUrl.trim(),
+      driveUrl: edDriveUrl.trim(),
+    })
+    setEdEnviando(false)
+
+    if (!resultado.ok) {
+      setEdErro(resultado.erro ?? "Não foi possível salvar as alterações.")
+      return
+    }
+
+    toast.success("Certificado atualizado!", { description: edCodigo.trim() })
+    setCertificadoParaEditar(null)
+    await recarregarCertificados()
+  }
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -204,7 +263,24 @@ export default function AdminCertificadosPage() {
             <CardTitle className="font-serif text-xl">Certificados publicados ({certificados.length})</CardTitle>
             <CardDescription>Clique no link para abrir a página pública de verificação.</CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="flex flex-col gap-4">
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="busca-certificado">Buscar por código ou título</Label>
+              <div className="relative">
+                <Search
+                  className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
+                  aria-hidden="true"
+                />
+                <Input
+                  id="busca-certificado"
+                  value={busca}
+                  onChange={(e) => setBusca(e.target.value)}
+                  placeholder="Ex.: turma2026 ou Certificado de Participação"
+                  className="rounded-full bg-card pl-9"
+                />
+              </div>
+            </div>
+
             <div className="overflow-x-auto rounded-2xl bg-card/70">
               <Table>
                 <TableHeader>
@@ -216,14 +292,16 @@ export default function AdminCertificadosPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {certificados.length === 0 ? (
+                  {certificadosFiltrados.length === 0 ? (
                     <TableRow>
                       <TableCell colSpan={4} className="py-8 text-center text-sm text-muted-foreground">
-                        Nenhum certificado publicado ainda.
+                        {certificados.length === 0
+                          ? "Nenhum certificado publicado ainda."
+                          : "Nenhum certificado encontrado com essa busca."}
                       </TableCell>
                     </TableRow>
                   ) : (
-                    certificados.map((c) => (
+                    certificadosFiltrados.map((c) => (
                       <TableRow key={c.id}>
                         <TableCell className="max-w-[14rem] font-medium">
                           <div className="flex items-center gap-2">
@@ -248,6 +326,15 @@ export default function AdminCertificadosPage() {
                             <Button
                               variant="ghost"
                               size="icon"
+                              className="rounded-full"
+                              onClick={() => abrirEdicao(c)}
+                            >
+                              <Pencil className="size-4" aria-hidden="true" />
+                              <span className="sr-only">Editar {c.codigo}</span>
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
                               className="rounded-full text-destructive hover:bg-destructive/10"
                               onClick={() => setCertificadoParaRemover({ id: c.id, codigo: c.codigo })}
                             >
@@ -262,6 +349,10 @@ export default function AdminCertificadosPage() {
                 </TableBody>
               </Table>
             </div>
+
+            <p className="text-xs text-muted-foreground">
+              {certificadosFiltrados.length} de {certificados.length} certificados
+            </p>
           </CardContent>
         </Card>
       </div>
@@ -287,6 +378,98 @@ export default function AdminCertificadosPage() {
               Sim, excluir certificado
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={Boolean(certificadoParaEditar)} onOpenChange={(open) => !open && setCertificadoParaEditar(null)}>
+        <DialogContent className="glass-strong border sm:max-w-md rounded-3xl p-6">
+          <DialogHeader>
+            <DialogTitle className="font-serif text-2xl">Editar certificado</DialogTitle>
+            <DialogDescription className="pt-2 text-sm leading-relaxed">
+              Altere os dados deste certificado. O registro continua o mesmo — nenhuma nova chave é gerada.
+            </DialogDescription>
+          </DialogHeader>
+
+          <form onSubmit={onSubmitEdicao} className="mt-2 flex flex-col gap-4">
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="ed-codigo">Código</Label>
+              <Input
+                id="ed-codigo"
+                value={edCodigo}
+                onChange={(e) => setEdCodigo(e.target.value)}
+                placeholder="ex.: turma2026-000123"
+                className="rounded-xl bg-card"
+              />
+              <span className="text-xs text-muted-foreground">
+                Apenas letras, números e hífen. Trocar o código muda a URL pública de verificação.
+              </span>
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="ed-titulo">Título (opcional)</Label>
+              <Input
+                id="ed-titulo"
+                value={edTitulo}
+                onChange={(e) => setEdTitulo(e.target.value)}
+                placeholder="Ex.: Certificado de Participação — Turma 2026"
+                className="rounded-xl bg-card"
+              />
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="ed-frente">Link da imagem de frente</Label>
+              <Input
+                id="ed-frente"
+                value={edImagemFrenteUrl}
+                onChange={(e) => setEdImagemFrenteUrl(e.target.value)}
+                placeholder="https://..."
+                className="rounded-xl bg-card"
+              />
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="ed-verso">Link da imagem de verso</Label>
+              <Input
+                id="ed-verso"
+                value={edImagemVersoUrl}
+                onChange={(e) => setEdImagemVersoUrl(e.target.value)}
+                placeholder="https://..."
+                className="rounded-xl bg-card"
+              />
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="ed-drive">Link do Google Drive (download)</Label>
+              <Input
+                id="ed-drive"
+                value={edDriveUrl}
+                onChange={(e) => setEdDriveUrl(e.target.value)}
+                placeholder="https://drive.google.com/..."
+                className="rounded-xl bg-card"
+              />
+            </div>
+
+            {edErro ? (
+              <p role="alert" className="rounded-xl bg-destructive/10 px-3 py-2 text-sm text-destructive font-medium">
+                {edErro}
+              </p>
+            ) : null}
+
+            <DialogFooter className="mt-2 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+              <Button
+                type="button"
+                variant="outline"
+                className="rounded-full"
+                disabled={edEnviando}
+                onClick={() => setCertificadoParaEditar(null)}
+              >
+                Cancelar
+              </Button>
+              <Button type="submit" className="rounded-full" disabled={edEnviando}>
+                {edEnviando ? "Salvando..." : "Salvar alterações"}
+              </Button>
+            </DialogFooter>
+          </form>
         </DialogContent>
       </Dialog>
     </>

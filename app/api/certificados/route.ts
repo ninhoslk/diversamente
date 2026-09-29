@@ -3,7 +3,7 @@ import { getUsuarioAtual } from "@/lib/supabase/server"
 import { createAdminSupabaseClient } from "@/lib/supabase/admin"
 import { CODIGO_CERTIFICADO_REGEX } from "@/lib/certificados"
 
-function validarUrlHttps(valor: string) {
+export function validarUrlHttps(valor: string) {
   try {
     const parsed = new URL(valor)
     return parsed.protocol === "https:"
