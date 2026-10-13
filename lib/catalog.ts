@@ -176,7 +176,7 @@ export const TIPOS: { slug: TipoMaterial; label: string }[] = [
   { slug: "pdf", label: "PDFs" },
   { slug: "video", label: "Vídeos" },
   { slug: "jogo", label: "Jogos" },
-  { slug: "manual", label: "Manuais" },
+  { slug: "manual", label: "Músicas" },
   { slug: "projeto", label: "Projetos" },
   { slug: "audio", label: "Áudios" },
 ]
