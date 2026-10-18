@@ -34,7 +34,7 @@ export default function AdminUsuariosPage() {
 
   const CATEGORIAS_OPCOES = [
     { id: "todas", nome: "Todas as salas / anos (Acesso total)" },
-    { id: "educacao-infantil", nome: "Educação Infantil: Perfis Neurodivergentes (Berçário, Maternal, Pré-alfabetização)" },
+    { id: "educacao-infantil", nome: "Educação Infantil: Perfil Neurodivergente (Berçário, Maternal, Pré-alfabetização)" },
     { id: "educacao-infantil-regular", nome: "Educação Infantil Regular (Maternal 1, Maternal 2, Pré-alfabetização 1, Pré-alfabetização 2)" },
     { id: "fundamental-1", nome: "Ensino Fundamental I: Recomposição da Aprendizagem e Perfis Neurodivergentes (1º ao 5º ano)" },
     { id: "educacao-ambiental", nome: "Educação Ambiental (1º ao 5º ano)" },

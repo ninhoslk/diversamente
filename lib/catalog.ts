@@ -103,7 +103,7 @@ export function usuarioPodeAcessarCategoria(
 export const TRILHAS: Trilha[] = [
   {
     slug: "educacao-infantil",
-    nome: "Educação Infantil: Perfis Neurodivergentes",
+    nome: "Educação Infantil: Perfil Neurodivergente",
     descricao: "Berçário, Maternal e Pré-alfabetização com materiais lúdicos e sensoriais.",
     gradient: "from-holo-pink via-holo-lilac to-holo-blue",
     tiposExtras: ["audio"],
