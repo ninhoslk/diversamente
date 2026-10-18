@@ -142,7 +142,7 @@ export default function AdminMateriaisPage() {
                   <TableHead className="hidden lg:table-cell">Categoria</TableHead>
                   <TableHead className="hidden lg:table-cell">Público</TableHead>
                   <TableHead>Tipo</TableHead>
-                  <TableHead className="hidden sm:table-cell">Criado</TableHead>
+                  <TableHead className="hidden xl:table-cell">Criado</TableHead>
                   <TableHead className="sticky right-0 z-10 bg-card text-right">Ações</TableHead>
                 </TableRow>
               </TableHeader>
@@ -159,18 +159,18 @@ export default function AdminMateriaisPage() {
                     const c = CATEGORIAS.find((x) => x.slug === m.categoria)
                     return (
                       <TableRow key={m.id}>
-                        <TableCell className="sticky left-0 z-10 min-w-[12rem] max-w-[22rem] whitespace-normal break-words bg-card font-medium">{m.titulo}</TableCell>
-                        <TableCell className="hidden text-sm text-muted-foreground md:table-cell">{t?.nome}</TableCell>
-                        <TableCell className="hidden text-sm text-muted-foreground lg:table-cell">{c?.nome}</TableCell>
-                        <TableCell className="hidden text-sm text-muted-foreground lg:table-cell">
+                        <TableCell className="sticky left-0 z-10 min-w-[12rem] max-w-[16rem] whitespace-normal break-words bg-card font-medium">{m.titulo}</TableCell>
+                        <TableCell className="hidden w-40 max-w-[10rem] whitespace-normal text-sm text-muted-foreground md:table-cell">{t?.nome}</TableCell>
+                        <TableCell className="hidden whitespace-nowrap text-sm text-muted-foreground lg:table-cell">{c?.nome}</TableCell>
+                        <TableCell className="hidden whitespace-nowrap text-sm text-muted-foreground lg:table-cell">
                           {PUBLICOS[m.publico]}
                         </TableCell>
                         <TableCell>
-                          <Badge variant="secondary" className="rounded-full text-[10px] uppercase">
+                          <Badge variant="secondary" className="rounded-full text-[10px] uppercase whitespace-nowrap">
                             {TIPOS.find((t) => t.slug === m.tipo)?.label ?? m.tipo}
                           </Badge>
                         </TableCell>
-                        <TableCell className="hidden text-sm tabular-nums text-muted-foreground sm:table-cell">
+                        <TableCell className="hidden text-sm tabular-nums text-muted-foreground xl:table-cell">
                           {m.criadoEm.split("-").reverse().join("/")}
                         </TableCell>
                         <TableCell className="sticky right-0 z-10 bg-card text-right">
