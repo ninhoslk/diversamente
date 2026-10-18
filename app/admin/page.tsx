@@ -16,7 +16,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { CATEGORIAS, PUBLICOS, TRILHAS } from "@/lib/catalog"
+import { CATEGORIAS, PUBLICOS, TIPOS, TRILHAS } from "@/lib/catalog"
 import { useApp } from "@/lib/app-provider"
 
 export default function AdminPage() {
@@ -141,7 +141,7 @@ export default function AdminPage() {
                     </div>
                     <div className="flex items-center gap-2">
                       <Badge variant="secondary" className="rounded-full text-[10px] uppercase">
-                        {m.tipo}
+                        {TIPOS.find((t) => t.slug === m.tipo)?.label ?? m.tipo}
                       </Badge>
                       <Button
                         variant="ghost"

@@ -29,7 +29,7 @@ const TIPOS_FORM_BASE: { slug: TipoMaterial; label: string; ajuda: string; Icon:
 ]
 
 const TIPOS_FORM_EXTRAS: Record<string, { slug: TipoMaterial; label: string; ajuda: string; Icon: typeof FileText }> = {
-  manual: { slug: "manual", label: "Manual", ajuda: "PDF protegido, aba separada de 'Manuais'", Icon: BookOpen },
+  manual: { slug: "manual", label: "Música", ajuda: "PDF protegido, aba separada de 'Músicas'", Icon: BookOpen },
   projeto: { slug: "projeto", label: "Projeto", ajuda: "PDF protegido, aba separada de 'Projetos'", Icon: FolderKanban },
   audio: { slug: "audio", label: "Áudio", ajuda: "Link para faixa de áudio (mesmo fluxo do Jogo)", Icon: Headphones },
 }
@@ -72,7 +72,7 @@ export default function NovoMaterialPage() {
     setTrilha(novaTrilha)
     setCategoria("")
     setPublico("")
-    // Se o tipo selecionado (ex.: Manual/Projeto/Áudio) só existe na trilha
+    // Se o tipo selecionado (ex.: Música/Projeto/Áudio) só existe na trilha
     // anterior, volta para PDF em vez de deixar o formulário num estado inválido.
     if (!tiposDisponiveisNaTrilha(novaTrilha).includes(tipo)) {
       setTipo("pdf")

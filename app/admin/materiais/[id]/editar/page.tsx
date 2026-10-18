@@ -27,7 +27,7 @@ const LABEL_TIPO: Record<TipoMaterial, string> = {
   pdf: "PDF",
   video: "Vídeo",
   jogo: "Jogo",
-  manual: "Manual",
+  manual: "Música",
   projeto: "Projeto",
   audio: "Áudio",
 }
