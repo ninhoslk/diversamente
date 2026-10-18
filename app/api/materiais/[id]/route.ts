@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { getUsuarioAtual } from "@/lib/supabase/server"
 import { createAdminSupabaseClient } from "@/lib/supabase/admin"
+import { tiposDisponiveisNaCategoria } from "@/lib/catalog"
 import { validarDestino } from "../route"
 
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -29,12 +30,21 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
 
   const { data: materialAtual, error: erroBusca } = await admin
     .from("materials")
-    .select("storage_path")
+    .select("storage_path, tipo")
     .eq("id", id)
     .single()
 
   if (erroBusca || !materialAtual) {
     return NextResponse.json({ ok: false, erro: "Material não encontrado." }, { status: 404 })
+  }
+
+  // O tipo não muda na edição, mas a categoria sim — não deixa mover um material
+  // para uma categoria que não aceita o tipo dele (ex.: Jogo para a Pré).
+  if (!tiposDisponiveisNaCategoria(trilha, categoria).includes(materialAtual.tipo)) {
+    return NextResponse.json(
+      { ok: false, erro: "Este tipo de material não está disponível para a categoria selecionada." },
+      { status: 400 },
+    )
   }
 
   const atualizacao: Record<string, unknown> = { titulo, descricao, trilha, categoria, publico }

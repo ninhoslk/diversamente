@@ -26,6 +26,13 @@ export type Categoria = {
    * publicar um material que deve aparecer em TODAS as categorias da trilha.
    */
   ocultaNaNavegacao?: boolean
+  /**
+   * Tipos de material que esta categoria NÃO aceita, mesmo que a trilha os
+   * permita (ex.: Pré-alfabetização da Educação Ambiental não tem Jogos). Vale
+   * para a aba de tipos em /conteudos, para o formulário do admin e para a
+   * validação nas rotas de API — ver tiposDisponiveisNaCategoria().
+   */
+  tiposExcluidos?: TipoMaterial[]
 }
 
 /**
@@ -119,7 +126,7 @@ export const TRILHAS: Trilha[] = [
     slug: "educacao-ambiental",
     nome: "Educação Ambiental",
     descricao:
-      "Trilha especial de sustentabilidade e consciência ambiental, do 1º ao 5º ano, em parceria com a EcosBio.",
+      "Trilha especial de sustentabilidade e consciência ambiental, em parceria com a EcosBio.",
     gradient: "from-emerald-400 via-green-500 to-lime-400",
     tiposExtras: ["manual", "projeto"],
   },
@@ -157,18 +164,22 @@ export const CATEGORIAS: Categoria[] = [
 
   // Trilha de Educação Ambiental — categorias com slugs próprios (prefixo "amb-") para
   // não colidir com as categorias de mesmo ano da trilha Fundamental I.
-  { slug: "amb-pre-alfabetizacao", nome: "Pré-alfabetização", trilha: "educacao-ambiental", publicos: ["aluno", "educador"] },
-  { slug: "amb-1-ano", nome: "1º Ano", trilha: "educacao-ambiental", publicos: ["aluno", "educador"] },
-  { slug: "amb-2-ano", nome: "2º Ano", trilha: "educacao-ambiental", publicos: ["aluno", "educador"] },
-  { slug: "amb-3-ano", nome: "3º Ano", trilha: "educacao-ambiental", publicos: ["aluno", "educador"] },
-  { slug: "amb-4-ano", nome: "4º Ano", trilha: "educacao-ambiental", publicos: ["aluno", "educador"] },
-  { slug: "amb-5-ano", nome: "5º Ano", trilha: "educacao-ambiental", publicos: ["aluno", "educador"] },
+  // Pré-alfabetização não tem Jogos; do 1º ao 5º ano não há Músicas (tipo "manual").
+  { slug: "amb-pre-alfabetizacao", nome: "Pré-alfabetização", trilha: "educacao-ambiental", publicos: ["aluno", "educador"], tiposExcluidos: ["jogo"] },
+  { slug: "amb-1-ano", nome: "1º Ano", trilha: "educacao-ambiental", publicos: ["aluno", "educador"], tiposExcluidos: ["manual"] },
+  { slug: "amb-2-ano", nome: "2º Ano", trilha: "educacao-ambiental", publicos: ["aluno", "educador"], tiposExcluidos: ["manual"] },
+  { slug: "amb-3-ano", nome: "3º Ano", trilha: "educacao-ambiental", publicos: ["aluno", "educador"], tiposExcluidos: ["manual"] },
+  { slug: "amb-4-ano", nome: "4º Ano", trilha: "educacao-ambiental", publicos: ["aluno", "educador"], tiposExcluidos: ["manual"] },
+  { slug: "amb-5-ano", nome: "5º Ano", trilha: "educacao-ambiental", publicos: ["aluno", "educador"], tiposExcluidos: ["manual"] },
   {
     slug: CATEGORIA_TODOS_OS_ANOS_SLUG,
     nome: "Todos os anos (1º ao 5º)",
     trilha: "educacao-ambiental",
     publicos: ["aluno", "educador"],
     ocultaNaNavegacao: true,
+    // Aparece em todos os anos, então só aceita o que existe em todos eles
+    // (sem Jogos por causa da Pré e sem Músicas por causa do 1º ao 5º).
+    tiposExcluidos: ["jogo", "manual"],
   },
 ]
 
@@ -194,6 +205,16 @@ export const TIPOS_BASE: TipoMaterial[] = ["pdf", "video", "jogo"]
 export function tiposDisponiveisNaTrilha(trilhaSlug: string): TipoMaterial[] {
   const extras = TRILHAS.find((t) => t.slug === trilhaSlug)?.tiposExtras ?? []
   return [...TIPOS_BASE, ...extras]
+}
+
+/**
+ * Tipos aceitos por uma categoria específica: os da trilha menos os
+ * `tiposExcluidos` da categoria. Fonte única para a aba de tipos, o
+ * formulário do admin e a validação no servidor.
+ */
+export function tiposDisponiveisNaCategoria(trilhaSlug: string, categoriaSlug: string): TipoMaterial[] {
+  const excluidos = getCategoria(trilhaSlug, categoriaSlug)?.tiposExcluidos ?? []
+  return tiposDisponiveisNaTrilha(trilhaSlug).filter((t) => !excluidos.includes(t))
 }
 
 export function getTrilha(slug: string) {

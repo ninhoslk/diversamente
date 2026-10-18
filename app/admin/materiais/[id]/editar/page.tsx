@@ -12,7 +12,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
-import { CATEGORIAS, PUBLICOS, TRILHAS, type PublicoSlug, type TipoMaterial } from "@/lib/catalog"
+import { CATEGORIAS, PUBLICOS, TRILHAS, tiposDisponiveisNaCategoria, type PublicoSlug, type TipoMaterial } from "@/lib/catalog"
 import { useApp } from "@/lib/app-provider"
 
 const ICONE_TIPO: Record<TipoMaterial, typeof FileText> = {
@@ -61,7 +61,14 @@ export default function EditarMaterialPage() {
     }
   }, [material, inicializado])
 
-  const categoriasDaTrilha = useMemo(() => CATEGORIAS.filter((c) => c.trilha === trilha), [trilha])
+  // O tipo não muda na edição, então só lista categorias que aceitam o tipo do material.
+  const categoriasDaTrilha = useMemo(
+    () =>
+      CATEGORIAS.filter(
+        (c) => c.trilha === trilha && (!material || tiposDisponiveisNaCategoria(trilha, c.slug).includes(material.tipo)),
+      ),
+    [trilha, material],
+  )
   const publicosDaCategoria = useMemo(
     () => categoriasDaTrilha.find((c) => c.slug === categoria)?.publicos ?? [],
     [categoriasDaTrilha, categoria],

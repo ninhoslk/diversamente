@@ -14,7 +14,7 @@ import {
   getTrilha,
   PUBLICOS,
   TIPOS,
-  tiposDisponiveisNaTrilha,
+  tiposDisponiveisNaCategoria,
   publicosPermitidosParaPapel,
   usuarioPodeAcessarCategoria,
   type Material,
@@ -62,9 +62,9 @@ export default function CategoriaPage({
   )
 
   const tiposDisponiveis = useMemo(() => {
-    const permitidos = tiposDisponiveisNaTrilha(trilhaSlug)
+    const permitidos = tiposDisponiveisNaCategoria(trilhaSlug, categoriaSlug)
     return TIPOS.filter((t) => permitidos.includes(t.slug))
-  }, [trilhaSlug])
+  }, [trilhaSlug, categoriaSlug])
 
   const publicoInicial = publicosPermitidos.length > 0 ? publicosPermitidos[0] : categoria.publicos[0]
 

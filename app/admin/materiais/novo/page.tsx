@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
-import { CATEGORIAS, PUBLICOS, TRILHAS, tiposDisponiveisNaTrilha, type PublicoSlug, type TipoMaterial } from "@/lib/catalog"
+import { CATEGORIAS, PUBLICOS, TRILHAS, tiposDisponiveisNaCategoria, tiposDisponiveisNaTrilha, type PublicoSlug, type TipoMaterial } from "@/lib/catalog"
 import { createClient } from "@/lib/supabase/client"
 import { cn } from "@/lib/utils"
 
@@ -49,15 +49,23 @@ export default function NovoMaterialPage() {
   const [enviando, setEnviando] = useState(false)
   const [erro, setErro] = useState<string | null>(null)
 
-  const categoriasDaTrilha = useMemo(() => CATEGORIAS.filter((c) => c.trilha === trilha), [trilha])
+  // Só lista as categorias que aceitam o tipo escolhido (ex.: Jogo não aparece
+  // para a Pré da Educação Ambiental; Música não aparece do 1º ao 5º ano).
+  const categoriasDaTrilha = useMemo(
+    () => CATEGORIAS.filter((c) => c.trilha === trilha && tiposDisponiveisNaCategoria(trilha, c.slug).includes(tipo)),
+    [trilha, tipo],
+  )
   const publicosDaCategoria = useMemo(
     () => categoriasDaTrilha.find((c) => c.slug === categoria)?.publicos ?? [],
     [categoriasDaTrilha, categoria],
   )
   const tiposFormDisponiveis = useMemo(() => {
     const extras = TRILHAS.find((t) => t.slug === trilha)?.tiposExtras ?? []
-    return [...TIPOS_FORM_BASE, ...extras.map((slug) => TIPOS_FORM_EXTRAS[slug]).filter(Boolean)]
-  }, [trilha])
+    const todos = [...TIPOS_FORM_BASE, ...extras.map((slug) => TIPOS_FORM_EXTRAS[slug]).filter(Boolean)]
+    if (!categoria) return todos
+    const aceitos = tiposDisponiveisNaCategoria(trilha, categoria)
+    return todos.filter((t) => aceitos.includes(t.slug))
+  }, [trilha, categoria])
 
   function onTrilhaChange(valor: string | null) {
     const novaTrilha = valor ?? TRILHAS[0].slug
@@ -189,7 +197,14 @@ export default function NovoMaterialPage() {
                   <button
                     key={slug}
                     type="button"
-                    onClick={() => setTipo(slug)}
+                    onClick={() => {
+                      setTipo(slug)
+                      // Trocar para um tipo que a categoria escolhida não aceita limpa a categoria.
+                      if (categoria && !tiposDisponiveisNaCategoria(trilha, categoria).includes(slug)) {
+                        setCategoria("")
+                        setPublico("")
+                      }
+                    }}
                     aria-pressed={tipo === slug}
                     className={cn(
                       "flex flex-col items-start gap-1.5 rounded-2xl border-2 bg-card/70 p-4 text-left transition-all",

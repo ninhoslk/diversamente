@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server"
 import { getUsuarioAtual } from "@/lib/supabase/server"
 import { createAdminSupabaseClient } from "@/lib/supabase/admin"
-import { CATEGORIAS, TRILHAS, PUBLICOS, TIPOS, tiposDisponiveisNaTrilha, type PublicoSlug, type TipoMaterial } from "@/lib/catalog"
+import { CATEGORIAS, TRILHAS, PUBLICOS, TIPOS, tiposDisponiveisNaCategoria, type PublicoSlug, type TipoMaterial } from "@/lib/catalog"
 
 export function validarDestino(trilha: string, categoria: string, publico: string) {
   const trilhaValida = TRILHAS.some((t) => t.slug === trilha)
@@ -68,19 +68,20 @@ async function processarEnvio(
   if (!TIPOS.some((t) => t.slug === tipo)) {
     return NextResponse.json({ ok: false, erro: "Tipo de material inválido." }, { status: 400 })
   }
-  // Cada trilha só aceita os tipos base (pdf/vídeo/jogo) + seus tiposExtras
-  // (ex.: manual/projeto só na Educação Ambiental, áudio só na Educação
-  // Infantil e no Fundamental I) — evita criar material "órfão" que nunca
-  // aparece em nenhuma aba de tipo naquela trilha. Ver lib/catalog.ts.
-  if (!tiposDisponiveisNaTrilha(trilha).includes(tipo)) {
-    return NextResponse.json(
-      { ok: false, erro: "Este tipo de material não está disponível para a trilha selecionada." },
-      { status: 400 },
-    )
-  }
 
   const erroDestino = validarDestino(trilha, categoria, publico)
   if (erroDestino) return NextResponse.json({ ok: false, erro: erroDestino }, { status: 400 })
+
+  // Cada categoria só aceita os tipos da sua trilha (base pdf/vídeo/jogo + os
+  // tiposExtras) menos os tiposExcluidos dela (ex.: Pré da Educação Ambiental
+  // não tem Jogos; 1º ao 5º ano não tem Músicas) — evita criar material
+  // "órfão" que nunca aparece em nenhuma aba. Ver lib/catalog.ts.
+  if (!tiposDisponiveisNaCategoria(trilha, categoria).includes(tipo)) {
+    return NextResponse.json(
+      { ok: false, erro: "Este tipo de material não está disponível para a categoria selecionada." },
+      { status: 400 },
+    )
+  }
 
   let storagePath: string | null = null
   let urlFinal: string | null = null
