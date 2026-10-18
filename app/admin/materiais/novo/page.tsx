@@ -20,7 +20,7 @@ const TAMANHO_MAXIMO_PDF = 150 * 1024 * 1024 // 150MB — deve casar com o file_
 // Tipos que usam o mesmo fluxo de PDF (upload direto ou link) — manuais e
 // projetos da Educação Ambiental são publicados como PDF, só ficam em abas
 // separadas de "PDF's" na navegação.
-const TIPOS_COMO_PDF: TipoMaterial[] = ["pdf", "manual", "projeto"]
+const TIPOS_COMO_PDF: TipoMaterial[] = ["pdf", "projeto"]
 
 const TIPOS_FORM_BASE: { slug: TipoMaterial; label: string; ajuda: string; Icon: typeof FileText }[] = [
   { slug: "pdf", label: "PDF", ajuda: "Leitura protegida no site, sem download", Icon: FileText },
@@ -29,7 +29,7 @@ const TIPOS_FORM_BASE: { slug: TipoMaterial; label: string; ajuda: string; Icon:
 ]
 
 const TIPOS_FORM_EXTRAS: Record<string, { slug: TipoMaterial; label: string; ajuda: string; Icon: typeof FileText }> = {
-  manual: { slug: "manual", label: "Música", ajuda: "PDF protegido, aba separada de 'Músicas'", Icon: BookOpen },
+  manual: { slug: "manual", label: "Música", ajuda: "Link de vídeo (YouTube/Vimeo), abre o player, aba 'Músicas'", Icon: BookOpen },
   projeto: { slug: "projeto", label: "Projeto", ajuda: "PDF protegido, aba separada de 'Projetos'", Icon: FolderKanban },
   audio: { slug: "audio", label: "Áudio", ajuda: "Link para faixa de áudio (mesmo fluxo do Jogo)", Icon: Headphones },
 }
@@ -344,13 +344,13 @@ export default function NovoMaterialPage() {
             ) : (
               <div className="flex flex-col gap-2">
                 <Label htmlFor="url">
-                  {tipo === "video" ? "Link do vídeo" : tipo === "audio" ? "Link do áudio" : "Link do jogo"}
+                  {tipo === "video" ? "Link do vídeo" : tipo === "manual" ? "Link da música (vídeo)" : tipo === "audio" ? "Link do áudio" : "Link do jogo"}
                 </Label>
                 <Input
                   id="url"
                   value={url}
                   onChange={(e) => setUrl(e.target.value)}
-                  placeholder={tipo === "video" ? "https://youtube.com/watch?v=..." : "https://..."}
+                  placeholder={tipo === "video" || tipo === "manual" ? "https://youtube.com/watch?v=..." : "https://..."}
                   className="rounded-xl bg-card"
                 />
               </div>

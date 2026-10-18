@@ -86,7 +86,7 @@ async function processarEnvio(
   let storagePath: string | null = null
   let urlFinal: string | null = null
 
-  if (tipo === "pdf" || tipo === "manual" || tipo === "projeto") {
+  if (tipo === "pdf" || tipo === "projeto") {
     if (storagePathEnviado) {
       if (!storagePathEnviado.startsWith(`${trilha}/${categoria}/`)) {
         return NextResponse.json({ ok: false, erro: "Caminho de arquivo inválido." }, { status: 400 })

@@ -22,7 +22,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
     return NextResponse.json({ ok: false, erro: "Material não encontrado." }, { status: 404 })
   }
 
-  const tiposComoPdf = ["pdf", "manual", "projeto"]
+  const tiposComoPdf = ["pdf", "manual", "projeto"] // "manual" (Músicas) só tem PDF nos itens antigos enviados como arquivo
   if (!tiposComoPdf.includes(material.tipo) || !material.storage_path) {
     return NextResponse.json({ ok: false, erro: "Este material não possui arquivo de PDF." }, { status: 400 })
   }

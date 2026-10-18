@@ -209,7 +209,7 @@ export default function EditarMaterialPage() {
             ) : (
               <div className="flex flex-col gap-2">
                 <Label htmlFor="url">
-                  {material.tipo === "video"
+                  {material.tipo === "video" || material.tipo === "manual"
                     ? "Link do vídeo"
                     : material.tipo === "jogo"
                       ? "Link do jogo"

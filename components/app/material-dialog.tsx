@@ -28,7 +28,7 @@ export function MaterialDialog({
             </DialogHeader>
 
             <div className="mt-2">
-              {material.tipo === "pdf" || material.tipo === "manual" || material.tipo === "projeto" ? (
+              {material.tipo === "pdf" || material.tipo === "projeto" || (material.tipo === "manual" && material.storagePath) ? (
                 <PdfViewer
                   materialId={material.id}
                   url={material.url}
@@ -36,7 +36,7 @@ export function MaterialDialog({
                   titulo={material.titulo}
                 />
               ) : null}
-              {material.tipo === "video" ? <VideoViewer url={material.url} titulo={material.titulo} /> : null}
+              {material.tipo === "video" || (material.tipo === "manual" && !material.storagePath) ? <VideoViewer url={material.url} titulo={material.titulo} /> : null}
               {material.tipo === "jogo" ? (
                 <div className="flex flex-col items-center gap-4 rounded-2xl bg-secondary/50 p-6 sm:p-10 text-center">
                   <span className="flex size-14 items-center justify-center rounded-2xl bg-primary/10">
