@@ -153,10 +153,10 @@ export const CATEGORIAS: Categoria[] = [
   // de material enquanto o restante da trilha é preparado.
   { slug: "bercario-1", nome: "Berçário I", trilha: "educacao-infantil-regular", publicos: ["educador", "familia"] },
   { slug: "bercario-2", nome: "Berçário II", trilha: "educacao-infantil-regular", publicos: ["educador", "familia"] },
-  { slug: "maternal-1", nome: "Maternal 1", trilha: "educacao-infantil-regular", publicos: ["crianca", "educador", "familia"] },
-  { slug: "maternal-2", nome: "Maternal 2", trilha: "educacao-infantil-regular", publicos: ["crianca", "educador", "familia"] },
-  { slug: "pre-1", nome: "Pré-alfabetização 1", trilha: "educacao-infantil-regular", publicos: ["crianca", "educador", "familia"] },
-  { slug: "pre-2", nome: "Pré-alfabetização 2", trilha: "educacao-infantil-regular", publicos: ["crianca", "educador", "familia"] },
+  { slug: "maternal-1", nome: "Maternal I", trilha: "educacao-infantil-regular", publicos: ["crianca", "educador", "familia"] },
+  { slug: "maternal-2", nome: "Maternal II", trilha: "educacao-infantil-regular", publicos: ["crianca", "educador", "familia"] },
+  { slug: "pre-1", nome: "Pré-alfabetização I", trilha: "educacao-infantil-regular", publicos: ["crianca", "educador", "familia"] },
+  { slug: "pre-2", nome: "Pré-alfabetização II", trilha: "educacao-infantil-regular", publicos: ["crianca", "educador", "familia"] },
 
   { slug: "1-ano", nome: "1º Ano", trilha: "fundamental-1", publicos: ["aluno", "educador", "familia"] },
   { slug: "2-ano", nome: "2º Ano", trilha: "fundamental-1", publicos: ["aluno", "educador", "familia"] },
