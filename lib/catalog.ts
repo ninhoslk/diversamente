@@ -117,7 +117,7 @@ export const TRILHAS: Trilha[] = [
   },
   {
     slug: "fundamental-1",
-    nome: "Ensino Fundamental I: Recomposição da Aprendizagem e Perfis Neurodivergentes",
+    nome: "Ensino Fundamental I: Cérebro em movimento (material paradidático)",
     descricao: "Do 1º ao 5º ano, com trilhas para estudante, educador e família.",
     gradient: "from-holo-blue via-holo-mint to-holo-yellow",
     tiposExtras: ["audio"],
