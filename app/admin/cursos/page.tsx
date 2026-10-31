@@ -1,7 +1,8 @@
 "use client"
 
 import { useState } from "react"
-import { AlertTriangle, GraduationCap, Pencil, PlusCircle, Trash2, X } from "lucide-react"
+import Link from "next/link"
+import { AlertTriangle, GraduationCap, ListVideo, Pencil, PlusCircle, Trash2, X } from "lucide-react"
 import { toast } from "sonner"
 import { Breadcrumbs } from "@/components/app/breadcrumbs"
 import { Button } from "@/components/ui/button"
@@ -27,7 +28,6 @@ export default function AdminCursosPage() {
   const [titulo, setTitulo] = useState("")
   const [descricao, setDescricao] = useState("")
   const [imagemUrl, setImagemUrl] = useState("")
-  const [url, setUrl] = useState("")
   const [enviando, setEnviando] = useState(false)
   const [erro, setErro] = useState<string | null>(null)
   const [cursoParaRemover, setCursoParaRemover] = useState<{ id: string; titulo: string } | null>(null)
@@ -37,7 +37,6 @@ export default function AdminCursosPage() {
     setTitulo("")
     setDescricao("")
     setImagemUrl("")
-    setUrl("")
     setErro(null)
   }
 
@@ -46,7 +45,6 @@ export default function AdminCursosPage() {
     setTitulo(curso.titulo)
     setDescricao(curso.descricao)
     setImagemUrl(curso.imagemUrl)
-    setUrl(curso.url)
     setErro(null)
     window.scrollTo({ top: 0, behavior: "smooth" })
   }
@@ -56,9 +54,8 @@ export default function AdminCursosPage() {
     setErro(null)
 
     if (!titulo.trim()) return setErro("Informe o título do curso.")
-    if (!url.trim()) return setErro("Informe o link do curso na Hotmart.")
 
-    const dados = { titulo: titulo.trim(), descricao: descricao.trim(), imagemUrl: imagemUrl.trim(), url: url.trim() }
+    const dados = { titulo: titulo.trim(), descricao: descricao.trim(), imagemUrl: imagemUrl.trim() }
 
     try {
       setEnviando(true)
@@ -122,8 +119,9 @@ export default function AdminCursosPage() {
       <div className="max-w-xl">
         <h1 className="font-serif text-3xl font-semibold tracking-tight text-balance sm:text-4xl">Cursos</h1>
         <p className="mt-2 leading-relaxed text-muted-foreground text-pretty">
-          Cadastre os cursos da Hotmart. Cada curso aparece na aba <strong>Cursos</strong> com imagem e resumo, e ao
-          clicar o usuário é levado direto para o link informado — visível só para quem está logado.
+          Cadastre os cursos com capa e resumo. Depois, em <strong>Módulos e aulas</strong>, monte os módulos com os
+          vídeos do YouTube — o usuário assiste dentro do site e o progresso dele aparece na aba <strong>Cursos</strong>.
+          Visível só para quem está logado.
         </p>
       </div>
 
@@ -132,7 +130,7 @@ export default function AdminCursosPage() {
           <CardHeader>
             <CardTitle className="font-serif text-xl">{editandoId ? "Editar curso" : "Novo curso"}</CardTitle>
             <CardDescription>
-              {editandoId ? "Altere os dados e salve." : "O usuário será redirecionado para o link da Hotmart."}
+              {editandoId ? "Altere os dados e salve." : "Depois de criar, adicione os módulos e as aulas."}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -170,7 +168,7 @@ export default function AdminCursosPage() {
                   className="rounded-xl bg-card"
                 />
                 <span className="text-xs text-muted-foreground">
-                  Link direto da imagem (ex.: a capa do curso na Hotmart). Opcional, mas recomendado.
+                  Link direto da imagem de capa. Opcional, mas recomendado.
                 </span>
                 {imagemUrl.trim().startsWith("https://") ? (
                   // eslint-disable-next-line @next/next/no-img-element
@@ -180,17 +178,6 @@ export default function AdminCursosPage() {
                     className="aspect-video w-full rounded-xl border object-cover"
                   />
                 ) : null}
-              </div>
-
-              <div className="flex flex-col gap-2">
-                <Label htmlFor="c-url">Link do curso (Hotmart)</Label>
-                <Input
-                  id="c-url"
-                  value={url}
-                  onChange={(e) => setUrl(e.target.value)}
-                  placeholder="https://pay.hotmart.com/..."
-                  className="rounded-xl bg-card"
-                />
               </div>
 
               {erro ? (
@@ -256,7 +243,13 @@ export default function AdminCursosPage() {
                         <TableCell className="hidden text-sm tabular-nums text-muted-foreground sm:table-cell">
                           {curso.criadoEm.split("-").reverse().join("/")}
                         </TableCell>
-                        <TableCell className="text-right">
+                        <TableCell className="whitespace-nowrap text-right">
+                          <Button asChild variant="outline" size="sm" className="mr-1 rounded-full">
+                            <Link href={`/admin/cursos/${curso.id}`}>
+                              <ListVideo className="size-4" aria-hidden="true" />
+                              Módulos e aulas
+                            </Link>
+                          </Button>
                           <Button
                             variant="ghost"
                             size="icon"

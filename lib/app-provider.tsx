@@ -69,7 +69,7 @@ type AppContextValue = {
   removerCurso: (id: string) => Promise<{ ok: boolean; erro?: string }>
   atualizarCurso: (
     id: string,
-    dados: { titulo: string; descricao: string; imagemUrl: string; url: string },
+    dados: { titulo: string; descricao: string; imagemUrl: string },
   ) => Promise<{ ok: boolean; erro?: string }>
   certificados: Certificado[]
   carregandoCertificados: boolean
@@ -114,7 +114,6 @@ function linhaParaCurso(row: Record<string, unknown>): Curso {
     titulo: row.titulo as string,
     descricao: (row.descricao as string) ?? "",
     imagemUrl: (row.imagem_url as string) ?? "",
-    url: (row.url as string) ?? "",
     criadoEm: ((row.created_at as string) ?? new Date().toISOString()).slice(0, 10),
   }
 }
@@ -612,7 +611,7 @@ export function AppProvider({
   }, [])
 
   const atualizarCurso = useCallback(
-    async (id: string, dados: { titulo: string; descricao: string; imagemUrl: string; url: string }) => {
+    async (id: string, dados: { titulo: string; descricao: string; imagemUrl: string }) => {
       try {
         const res = await fetch(`/api/cursos/${id}`, {
           method: "PATCH",

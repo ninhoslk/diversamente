@@ -430,3 +430,100 @@ BEGIN
 EXCEPTION WHEN duplicate_object THEN
   NULL;
 END $$;
+
+-- Os cursos deixaram de redirecionar para a Hotmart: agora são assistidos
+-- dentro do site, módulo por módulo (ver seção 9). O link externo vira opcional.
+ALTER TABLE public.cursos ALTER COLUMN url DROP NOT NULL;
+
+
+-- ---------------------------------------------------
+-- 9. MÓDULOS, AULAS E PROGRESSO DOS CURSOS
+-- ---------------------------------------------------
+-- curso -> módulos (ordenados) -> aulas (vídeos do YouTube, ordenados).
+-- Leitura liberada para qualquer usuário autenticado (mesma regra de "cursos");
+-- escrita só pelo admin (via rotas app/api/curso-modulos e app/api/curso-aulas).
+CREATE TABLE IF NOT EXISTS public.curso_modulos (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  curso_id UUID NOT NULL REFERENCES public.cursos(id) ON DELETE CASCADE,
+  titulo TEXT NOT NULL,
+  ordem INTEGER NOT NULL DEFAULT 0,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS public.curso_aulas (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  modulo_id UUID NOT NULL REFERENCES public.curso_modulos(id) ON DELETE CASCADE,
+  titulo TEXT NOT NULL,
+  descricao TEXT,
+  video_url TEXT NOT NULL,
+  ordem INTEGER NOT NULL DEFAULT 0,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS curso_modulos_curso_idx ON public.curso_modulos (curso_id, ordem);
+CREATE INDEX IF NOT EXISTS curso_aulas_modulo_idx ON public.curso_aulas (modulo_id, ordem);
+
+ALTER TABLE public.curso_modulos ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.curso_aulas ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "curso_modulos_select" ON public.curso_modulos;
+DROP POLICY IF EXISTS "curso_modulos_write" ON public.curso_modulos;
+DROP POLICY IF EXISTS "curso_aulas_select" ON public.curso_aulas;
+DROP POLICY IF EXISTS "curso_aulas_write" ON public.curso_aulas;
+
+CREATE POLICY "curso_modulos_select" ON public.curso_modulos
+  FOR SELECT USING (auth.uid() IS NOT NULL);
+CREATE POLICY "curso_modulos_write" ON public.curso_modulos
+  FOR ALL USING (public.is_admin()) WITH CHECK (public.is_admin());
+
+CREATE POLICY "curso_aulas_select" ON public.curso_aulas
+  FOR SELECT USING (auth.uid() IS NOT NULL);
+CREATE POLICY "curso_aulas_write" ON public.curso_aulas
+  FOR ALL USING (public.is_admin()) WITH CHECK (public.is_admin());
+
+REVOKE ALL ON public.curso_modulos FROM anon;
+REVOKE ALL ON public.curso_aulas FROM anon;
+GRANT SELECT ON public.curso_modulos TO authenticated;
+GRANT SELECT ON public.curso_aulas TO authenticated;
+GRANT ALL ON public.curso_modulos TO service_role;
+GRANT ALL ON public.curso_aulas TO service_role;
+
+-- Progresso: uma linha por (usuário, aula assistida). Cada usuário só lê,
+-- marca e desmarca as próprias aulas — gravado direto pelo cliente, sob RLS.
+CREATE TABLE IF NOT EXISTS public.curso_progresso (
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  aula_id UUID NOT NULL REFERENCES public.curso_aulas(id) ON DELETE CASCADE,
+  assistido_em TIMESTAMPTZ DEFAULT NOW(),
+  PRIMARY KEY (user_id, aula_id)
+);
+
+ALTER TABLE public.curso_progresso ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "curso_progresso_select" ON public.curso_progresso;
+DROP POLICY IF EXISTS "curso_progresso_insert" ON public.curso_progresso;
+DROP POLICY IF EXISTS "curso_progresso_delete" ON public.curso_progresso;
+
+CREATE POLICY "curso_progresso_select" ON public.curso_progresso
+  FOR SELECT USING (user_id = auth.uid());
+CREATE POLICY "curso_progresso_insert" ON public.curso_progresso
+  FOR INSERT WITH CHECK (user_id = auth.uid());
+CREATE POLICY "curso_progresso_delete" ON public.curso_progresso
+  FOR DELETE USING (user_id = auth.uid());
+
+REVOKE ALL ON public.curso_progresso FROM anon;
+GRANT SELECT, INSERT, DELETE ON public.curso_progresso TO authenticated;
+GRANT ALL ON public.curso_progresso TO service_role;
+
+DO $$
+BEGIN
+  ALTER PUBLICATION supabase_realtime ADD TABLE public.curso_modulos;
+EXCEPTION WHEN duplicate_object THEN
+  NULL;
+END $$;
+
+DO $$
+BEGIN
+  ALTER PUBLICATION supabase_realtime ADD TABLE public.curso_aulas;
+EXCEPTION WHEN duplicate_object THEN
+  NULL;
+END $$;
