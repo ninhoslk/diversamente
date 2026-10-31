@@ -4,7 +4,7 @@ import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { usePathname } from "next/navigation"
 import Link from "next/link"
-import { BookMarked, ChevronDown, Clapperboard, Home, LayoutDashboard, LibraryBig, LogOut, User, Users, Palette } from "lucide-react"
+import { BookMarked, ChevronDown, Clapperboard, GraduationCap, Home, LayoutDashboard, LibraryBig, LogOut, User, Users, Palette } from "lucide-react"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -138,6 +138,18 @@ export function AppHeader() {
                   </div>
                 ) : null}
               </div>
+              <Link
+                href="/cursos"
+                className={cn(
+                  "inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition-colors",
+                  pathname.startsWith("/cursos")
+                    ? "bg-card text-foreground shadow-sm"
+                    : "text-foreground/70 hover:bg-card/60",
+                )}
+              >
+                <GraduationCap className="size-4" aria-hidden="true" />
+                Cursos
+              </Link>
               {usuario?.papel === "admin" ? (
                 <>
                   <Link
@@ -213,6 +225,10 @@ export function AppHeader() {
               <DropdownMenuItem onClick={() => router.push("/conteudos")} className="rounded-xl cursor-pointer">
                 <LibraryBig className="size-4" aria-hidden="true" />
                 Biblioteca de Material Didático
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => router.push("/cursos")} className="rounded-xl cursor-pointer">
+                <GraduationCap className="size-4" aria-hidden="true" />
+                Cursos
               </DropdownMenuItem>
               {usuario?.papel === "admin" ? (
                 <>

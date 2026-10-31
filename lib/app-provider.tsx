@@ -6,6 +6,7 @@ import type { Material } from "@/lib/catalog"
 import type { ItemBiblioteca } from "@/lib/biblioteca"
 import type { ItemAtividade } from "@/lib/atividades"
 import type { Certificado } from "@/lib/certificados"
+import type { Curso } from "@/lib/cursos"
 import { CONFIG_PADRAO_SITE, mesclarConfigComPadrao, type SiteConfig } from "@/lib/site-config"
 import { createClient } from "@/lib/supabase/client"
 import { fetchSupabaseSiteConfig, saveSupabaseSiteConfig } from "@/lib/supabase"
@@ -61,6 +62,15 @@ type AppContextValue = {
   erroAtividades: string | null
   recarregarAtividades: () => Promise<void>
   removerItemAtividade: (id: string) => Promise<{ ok: boolean; erro?: string }>
+  cursos: Curso[]
+  carregandoCursos: boolean
+  erroCursos: string | null
+  recarregarCursos: () => Promise<void>
+  removerCurso: (id: string) => Promise<{ ok: boolean; erro?: string }>
+  atualizarCurso: (
+    id: string,
+    dados: { titulo: string; descricao: string; imagemUrl: string; url: string },
+  ) => Promise<{ ok: boolean; erro?: string }>
   certificados: Certificado[]
   carregandoCertificados: boolean
   erroCertificados: string | null
@@ -93,6 +103,17 @@ function linhaParaItemAtividade(row: Record<string, unknown>): ItemAtividade {
     titulo: row.titulo as string,
     descricao: (row.descricao as string) ?? "",
     tipo: row.tipo as ItemAtividade["tipo"],
+    url: (row.url as string) ?? "",
+    criadoEm: ((row.created_at as string) ?? new Date().toISOString()).slice(0, 10),
+  }
+}
+
+function linhaParaCurso(row: Record<string, unknown>): Curso {
+  return {
+    id: row.id as string,
+    titulo: row.titulo as string,
+    descricao: (row.descricao as string) ?? "",
+    imagemUrl: (row.imagem_url as string) ?? "",
     url: (row.url as string) ?? "",
     criadoEm: ((row.created_at as string) ?? new Date().toISOString()).slice(0, 10),
   }
@@ -151,6 +172,9 @@ export function AppProvider({
   const [atividadesItens, setAtividadesItens] = useState<ItemAtividade[]>([])
   const [carregandoAtividades, setCarregandoAtividades] = useState(true)
   const [erroAtividades, setErroAtividades] = useState<string | null>(null)
+  const [cursos, setCursos] = useState<Curso[]>([])
+  const [carregandoCursos, setCarregandoCursos] = useState(true)
+  const [erroCursos, setErroCursos] = useState<string | null>(null)
   const [certificados, setCertificados] = useState<Certificado[]>([])
   const [carregandoCertificados, setCarregandoCertificados] = useState(true)
   const [erroCertificados, setErroCertificados] = useState<string | null>(null)
@@ -226,6 +250,18 @@ export function AppProvider({
       setErroAtividades("Não foi possível carregar a biblioteca de atividades agora. Tente novamente em instantes.")
     }
     setCarregandoAtividades(false)
+  }, [supabase])
+
+  const recarregarCursos = useCallback(async () => {
+    setCarregandoCursos(true)
+    const { data, error } = await supabase.from("cursos").select("*").order("created_at", { ascending: false })
+    if (!error && data) {
+      setCursos(data.map(linhaParaCurso))
+      setErroCursos(null)
+    } else {
+      setErroCursos("Não foi possível carregar os cursos agora. Tente novamente em instantes.")
+    }
+    setCarregandoCursos(false)
   }, [supabase])
 
   const recarregarCertificados = useCallback(async () => {
@@ -390,6 +426,29 @@ export function AppProvider({
     }
   }, [usuario, supabase, recarregarAtividades])
 
+  // Cursos: mesmo padrão das bibliotecas (qualquer usuário autenticado).
+  useEffect(() => {
+    if (!usuario) {
+      setCursos([])
+      setErroCursos(null)
+      setCarregandoCursos(false)
+      return
+    }
+
+    recarregarCursos()
+
+    const canal = supabase
+      .channel("cursos_realtime")
+      .on("postgres_changes", { event: "*", schema: "public", table: "cursos" }, () => {
+        recarregarCursos()
+      })
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(canal)
+    }
+  }, [usuario, supabase, recarregarCursos])
+
   // Carrega a lista de usuários apenas quando o logado é admin (a rota já exige isso no servidor).
   useEffect(() => {
     if (usuario?.papel === "admin") {
@@ -541,6 +600,35 @@ export function AppProvider({
     }
   }, [])
 
+  const removerCurso = useCallback(async (id: string) => {
+    try {
+      const res = await fetch(`/api/cursos/${id}`, { method: "DELETE" })
+      const data = await res.json()
+      if (!res.ok || !data.ok) return { ok: false, erro: data.erro ?? "Erro ao remover curso." }
+      return { ok: true }
+    } catch {
+      return { ok: false, erro: "Erro de conexão ao remover curso." }
+    }
+  }, [])
+
+  const atualizarCurso = useCallback(
+    async (id: string, dados: { titulo: string; descricao: string; imagemUrl: string; url: string }) => {
+      try {
+        const res = await fetch(`/api/cursos/${id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(dados),
+        })
+        const data = await res.json()
+        if (!res.ok || !data.ok) return { ok: false, erro: data.erro ?? "Erro ao atualizar curso." }
+        return { ok: true }
+      } catch {
+        return { ok: false, erro: "Erro de conexão ao atualizar curso." }
+      }
+    },
+    [],
+  )
+
   const removerCertificado = useCallback(async (id: string) => {
     try {
       const res = await fetch(`/api/certificados/${id}`, { method: "DELETE" })
@@ -621,6 +709,12 @@ export function AppProvider({
       erroAtividades,
       recarregarAtividades,
       removerItemAtividade,
+      cursos,
+      carregandoCursos,
+      erroCursos,
+      recarregarCursos,
+      removerCurso,
+      atualizarCurso,
       certificados,
       carregandoCertificados,
       erroCertificados,
@@ -656,6 +750,12 @@ export function AppProvider({
       erroAtividades,
       recarregarAtividades,
       removerItemAtividade,
+      cursos,
+      carregandoCursos,
+      erroCursos,
+      recarregarCursos,
+      removerCurso,
+      atualizarCurso,
       certificados,
       carregandoCertificados,
       erroCertificados,

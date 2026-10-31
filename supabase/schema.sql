@@ -390,3 +390,43 @@ BEGIN
 EXCEPTION WHEN duplicate_object THEN
   NULL; -- já estava incluída
 END $$;
+
+
+-- ---------------------------------------------------
+-- 8. CURSOS (cursos próprios da Coleção Diversamente vendidos na Hotmart)
+-- ---------------------------------------------------
+-- Lista única, sem trilha/categoria/turma, visível para qualquer usuário
+-- autenticado (aluno, pai, professor ou admin). Cada curso tem imagem de capa
+-- (só a URL, hospedada fora do Supabase), um resumo e o link da Hotmart para
+-- onde o usuário é redirecionado ao clicar.
+CREATE TABLE IF NOT EXISTS public.cursos (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  titulo TEXT NOT NULL,
+  descricao TEXT,
+  imagem_url TEXT,
+  url TEXT NOT NULL,
+  created_by UUID REFERENCES auth.users(id) ON DELETE SET NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE public.cursos ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "cursos_select" ON public.cursos;
+DROP POLICY IF EXISTS "cursos_write" ON public.cursos;
+
+CREATE POLICY "cursos_select" ON public.cursos
+  FOR SELECT USING (auth.uid() IS NOT NULL);
+
+CREATE POLICY "cursos_write" ON public.cursos
+  FOR ALL USING (public.is_admin()) WITH CHECK (public.is_admin());
+
+REVOKE ALL ON public.cursos FROM anon;
+GRANT SELECT ON public.cursos TO authenticated;
+GRANT ALL ON public.cursos TO service_role;
+
+DO $$
+BEGIN
+  ALTER PUBLICATION supabase_realtime ADD TABLE public.cursos;
+EXCEPTION WHEN duplicate_object THEN
+  NULL;
+END $$;
